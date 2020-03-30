@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 
 namespace System.Net.Http
 {
+    internal delegate void ConfigureSocket(Socket socket);
+
     internal static class ConnectHelper
     {
         /// <summary>Pool of event args to use to establish connections.</summary>
@@ -37,7 +39,7 @@ namespace System.Net.Http
             }
         }
 
-        public static async Task<(Socket, Stream)> ConnectAsync(string host, int port, CancellationToken cancellationToken)
+        public static async Task<(Socket, Stream)> ConnectAsync(string host, int port, ConfigureSocket configureSocket, CancellationToken cancellationToken)
         {
             // Rather than creating a new Socket and calling ConnectAsync on it, we use the static
             // Socket.ConnectAsync with a SocketAsyncEventArgs, as we can then use Socket.CancelConnectAsync
@@ -76,6 +78,7 @@ namespace System.Net.Http
                 // Configure the socket and return a stream for it.
                 Socket socket = saea.ConnectSocket;
                 socket.NoDelay = true;
+                configureSocket(socket);
                 return (socket, new NetworkStream(socket, ownsSocket: true));
             }
             catch (Exception error)

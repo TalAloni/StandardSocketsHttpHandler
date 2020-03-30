@@ -38,6 +38,7 @@ namespace System.Net.Http
         internal SslClientAuthenticationOptions _sslOptions;
 
         internal IDictionary<string, object> _properties;
+        internal ConfigureSocket _configureSocket = (_) => { };
 
         public HttpConnectionSettings Clone()
         {
@@ -67,6 +68,7 @@ namespace System.Net.Http
                 _properties = _properties,
                 _proxy = _proxy,
                 _sslOptions = _sslOptions?.ShallowClone(), // shallow clone the options for basic prevention of mutation issues while processing
+                _configureSocket = _configureSocket,
                 _useCookies = _useCookies,
                 _useProxy = _useProxy,
             };

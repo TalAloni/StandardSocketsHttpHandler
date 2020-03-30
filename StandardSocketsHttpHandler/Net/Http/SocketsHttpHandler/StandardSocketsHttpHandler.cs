@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,6 +15,16 @@ namespace System.Net.Http
         private readonly HttpConnectionSettings _settings = new HttpConnectionSettings();
         private StandardHttpMessageHandler _handler;
         private bool _disposed;
+        
+        public event EventHandler<Socket> SocketCreated;
+
+        public StandardSocketsHttpHandler()
+        {
+            _settings._configureSocket = (Socket socket) =>
+            {
+                SocketCreated?.Invoke(this, socket);
+            };
+        }
 
         private void CheckDisposed()
         {
