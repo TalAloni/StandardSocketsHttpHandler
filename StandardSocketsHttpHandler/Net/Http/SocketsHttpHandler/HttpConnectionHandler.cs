@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace System.Net.Http
 {
-    internal sealed class HttpConnectionHandler : HttpMessageHandler
+    internal sealed class HttpConnectionHandler : StandardHttpMessageHandler
     {
         private readonly HttpConnectionPoolManager _poolManager;
 
@@ -16,7 +16,7 @@ namespace System.Net.Http
             _poolManager = poolManager;
         }
 
-        protected internal override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             return _poolManager.SendAsync(request, doRequestAuth:false, cancellationToken);
         }

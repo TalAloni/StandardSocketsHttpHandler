@@ -12,7 +12,7 @@ namespace System.Net.Http
     public sealed class SocketsHttpHandler : HttpMessageHandler
     {
         private readonly HttpConnectionSettings _settings = new HttpConnectionSettings();
-        private HttpMessageHandler _handler;
+        private StandardHttpMessageHandler _handler;
         private bool _disposed;
 
         private void CheckDisposed()
@@ -284,7 +284,7 @@ namespace System.Net.Http
             base.Dispose(disposing);
         }
 
-        private HttpMessageHandler SetupHandlerChain()
+        private StandardHttpMessageHandler SetupHandlerChain()
         {
             // Clone the settings to get a relatively consistent view that won't change after this point.
             // (This isn't entirely complete, as some of the collections it contains aren't currently deeply cloned.)
@@ -292,7 +292,7 @@ namespace System.Net.Http
 
             HttpConnectionPoolManager poolManager = new HttpConnectionPoolManager(settings);
 
-            HttpMessageHandler handler;
+            StandardHttpMessageHandler handler;
 
             if (settings._credentials == null)
             {
@@ -308,7 +308,7 @@ namespace System.Net.Http
                 // Just as with WinHttpHandler and CurlHandler, for security reasons, we do not support authentication on redirects
                 // if the credential is anything other than a CredentialCache.
                 // We allow credentials in a CredentialCache since they are specifically tied to URIs.
-                HttpMessageHandler redirectHandler = 
+                StandardHttpMessageHandler redirectHandler = 
                     (settings._credentials == null || settings._credentials is CredentialCache) ? 
                     handler : 
                     new HttpConnectionHandler(poolManager);        // will not authenticate
@@ -330,11 +330,11 @@ namespace System.Net.Http
             return _handler;
         }
 
-        protected internal override Task<HttpResponseMessage> SendAsync(
+        protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             CheckDisposed();
-            HttpMessageHandler handler = _handler ?? SetupHandlerChain();
+            StandardHttpMessageHandler handler = _handler ?? SetupHandlerChain();
 
             Exception error = ValidateAndNormalizeRequest(request);
             if (error != null)
@@ -342,7 +342,7 @@ namespace System.Net.Http
                 return Task.FromException<HttpResponseMessage>(error);
             }
 
-            return handler.SendAsync(request, cancellationToken);
+            return handler.SendRequestAsync(request, cancellationToken);
         }
 
         private Exception ValidateAndNormalizeRequest(HttpRequestMessage request)
