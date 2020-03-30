@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace System.Net.Http
 {
-    public sealed class SocketsHttpHandler : HttpMessageHandler
+    public sealed class StandardSocketsHttpHandler : HttpMessageHandler
     {
         private readonly HttpConnectionSettings _settings = new HttpConnectionSettings();
         private StandardHttpMessageHandler _handler;
@@ -19,7 +19,7 @@ namespace System.Net.Http
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(SocketsHttpHandler));
+                throw new ObjectDisposedException(nameof(StandardSocketsHttpHandler));
             }
         }
 
