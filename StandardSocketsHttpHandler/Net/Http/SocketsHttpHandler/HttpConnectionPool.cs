@@ -402,7 +402,7 @@ namespace System.Net.Http
         private async ValueTask<(Stream, HttpResponseMessage)> EstablishProxyTunnel(CancellationToken cancellationToken)
         {
             // Send a CONNECT request to the proxy server to establish a tunnel.
-            HttpRequestMessage tunnelRequest = new HttpRequestMessage(HttpMethod.Connect, _proxyUri);
+            HttpRequestMessage tunnelRequest = new HttpRequestMessage(HttpMethodUtils.Connect, _proxyUri);
             tunnelRequest.Headers.Host = $"{_host}:{_port}";    // This specifies destination host/port to connect to
 
             HttpResponseMessage tunnelResponse = await _poolManager.SendProxyConnectAsync(tunnelRequest, _proxyUri, cancellationToken).ConfigureAwait(false);

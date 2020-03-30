@@ -360,7 +360,7 @@ namespace System.Net.Http
             Debug.Assert(RemainingBuffer.Length == 0, "Unexpected data in read buffer");
 
             _currentRequest = request;
-            HttpMethod normalizedMethod = HttpMethod.Normalize(request.Method);
+            HttpMethod normalizedMethod = HttpMethodUtils.Normalize(request.Method);
             bool hasExpectContinueHeader = request.HasHeaders && request.Headers.ExpectContinue == true;
 
             Debug.Assert(!_canRetry);
@@ -375,7 +375,7 @@ namespace System.Net.Http
                 await WriteStringAsync(normalizedMethod.Method).ConfigureAwait(false);
                 await WriteByteAsync((byte)' ').ConfigureAwait(false);
 
-                if (ReferenceEquals(normalizedMethod, HttpMethod.Connect))
+                if (ReferenceEquals(normalizedMethod, HttpMethodUtils.Connect))
                 {
                     // RFC 7231 #section-4.3.6.
                     // Write only CONNECT foo.com:345 HTTP/1.1
@@ -441,7 +441,7 @@ namespace System.Net.Http
                 {
                     // Write out Content-Length: 0 header to indicate no body,
                     // unless this is a method that never has a body.
-                    if (!ReferenceEquals(normalizedMethod, HttpMethod.Get) && !ReferenceEquals(normalizedMethod, HttpMethod.Head) && !ReferenceEquals(normalizedMethod, HttpMethod.Connect))
+                    if (!ReferenceEquals(normalizedMethod, HttpMethod.Get) && !ReferenceEquals(normalizedMethod, HttpMethod.Head) && !ReferenceEquals(normalizedMethod, HttpMethodUtils.Connect))
                     {
                         await WriteBytesAsync(s_contentLength0NewlineAsciiBytes).ConfigureAwait(false);
                     }
@@ -637,7 +637,7 @@ namespace System.Net.Http
                     responseStream = EmptyReadStream.Instance;
                     CompleteResponse();
                 }
-                else if (ReferenceEquals(normalizedMethod, HttpMethod.Connect) && response.StatusCode == HttpStatusCode.OK)
+                else if (ReferenceEquals(normalizedMethod, HttpMethodUtils.Connect) && response.StatusCode == HttpStatusCode.OK)
                 {
                     // Successful response to CONNECT does not have body.
                     // What ever comes next should be opaque.
