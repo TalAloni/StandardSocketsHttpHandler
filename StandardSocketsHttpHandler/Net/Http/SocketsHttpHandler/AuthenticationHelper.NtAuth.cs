@@ -22,7 +22,7 @@ namespace System.Net.Http
 
         private static bool ProxySupportsConnectionAuth(HttpResponseMessage response)
         {
-            if (!response.Headers.TryGetValues(KnownHeaders.ProxySupport.Descriptor, out IEnumerable<string> values))
+            if (!response.Headers.TryGetValues(KnownHeaders.ProxySupport.Descriptor.Name, out IEnumerable<string> values))
             {
                 return false;
             }

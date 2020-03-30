@@ -939,12 +939,12 @@ namespace System.Net.Http
             // if the header can't be added, we silently drop it.
             if (descriptor.HeaderType == HttpHeaderType.Content)
             {
-                response.Content.Headers.TryAddWithoutValidation(descriptor, headerValue);
+                response.Content.Headers.TryAddWithoutValidation(descriptor.Name, headerValue);
             }
             else
             {
                 // Request headers returned on the response must be treated as custom headers
-                response.Headers.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader() : descriptor, headerValue);
+                response.Headers.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader().Name : descriptor.Name, headerValue);
             }
         }
 
