@@ -104,7 +104,7 @@ namespace System.Net.Http
             // Figure out proxy stuff.
             if (settings._useProxy)
             {
-                _proxy = settings._proxy ?? SystemProxyInfo.ConstructSystemProxy();
+                _proxy = settings._proxy;
                 if (_proxy != null)
                 {
                     _proxyCredentials = _proxy.Credentials ?? settings._defaultProxyCredentials;
