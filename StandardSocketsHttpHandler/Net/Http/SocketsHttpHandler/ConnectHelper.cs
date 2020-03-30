@@ -17,9 +17,8 @@ namespace System.Net.Http
     internal static class ConnectHelper
     {
         /// <summary>Pool of event args to use to establish connections.</summary>
-        private static readonly ConcurrentQueue<ConnectEventArgs>.Segment s_connectEventArgs =
-            new ConcurrentQueue<ConnectEventArgs>.Segment(
-                ConcurrentQueue<ConnectEventArgs>.Segment.RoundUpToPowerOf2(Math.Max(2, Environment.ProcessorCount)));
+        private static readonly ConcurrentQueue<ConnectEventArgs> s_connectEventArgs =
+            new ConcurrentQueue<ConnectEventArgs>();
 
         /// <summary>
         /// Helper type used by HttpClientHandler when wrapping SocketsHttpHandler to map its
@@ -89,7 +88,11 @@ namespace System.Net.Http
             {
                 // Pool the event args, or if the pool is full, dispose of it.
                 saea.Clear();
-                if (!s_connectEventArgs.TryEnqueue(saea))
+                if (s_connectEventArgs.Count <= Math.Max(2, Environment.ProcessorCount))
+                {
+                    s_connectEventArgs.Enqueue(saea);
+                }
+                else
                 {
                     saea.Dispose();
                 }
