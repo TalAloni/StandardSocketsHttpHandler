@@ -14,6 +14,7 @@ namespace System.Net.Http
         private sealed class HttpConnectionResponseContent : HttpContent
         {
             private HttpContentStream _stream;
+            private CancellationToken _cancellationToken;
             private bool _consumedStream;
 
             public void SetStream(HttpContentStream stream)
@@ -23,6 +24,13 @@ namespace System.Net.Http
                 Debug.Assert(!_consumedStream);
 
                 _stream = stream;
+            }
+
+            public void SetDefaultCancellationToken(CancellationToken cancellationToken)
+            {
+                Debug.Assert(cancellationToken != null);
+
+                _cancellationToken = cancellationToken;
             }
 
             internal bool IsEmpty => (_stream == EmptyReadStream.Instance);
@@ -39,7 +47,7 @@ namespace System.Net.Http
             }
 
             protected sealed override Task SerializeToStreamAsync(Stream stream, TransportContext context) =>
-                SerializeToStreamAsyncInternal(stream, context, CancellationToken.None);
+                SerializeToStreamAsyncInternal(stream, context, _cancellationToken);
 
             internal async Task SerializeToStreamAsyncInternal(Stream stream, TransportContext context, CancellationToken cancellationToken)
             {
