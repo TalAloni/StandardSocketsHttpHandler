@@ -1073,7 +1073,7 @@ namespace System.Net.Http
             {
                 // Write out Content-Length: 0 header to indicate no body,
                 // unless this is a method that never has a body.
-                if (normalizedMethod.MustHaveRequestBody)
+                if (normalizedMethod.MustHaveRequestBody())
                 {
                     WriteBytes(KnownHeaders.ContentLength.Http2EncodedName);
                     WriteLiteralHeaderValue("0");
