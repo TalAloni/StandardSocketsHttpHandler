@@ -54,29 +54,6 @@ namespace System.Net.Http.Headers
             _separator = separator;
         }
 
-        // If a parser supports multiple values, a call to ParseValue/TryParseValue should return a value for 'index'
-        // pointing to the next non-whitespace character after a delimiter. E.g. if called with a start index of 0
-        // for string "value , second_value", then after the call completes, 'index' must point to 's', i.e. the first
-        // non-whitespace after the separator ','.
-        public abstract bool TryParseValue(string value, object storeValue, ref int index, out object parsedValue);
-
-        public object ParseValue(string value, object storeValue, ref int index)
-        {
-            // Index may be value.Length (e.g. both 0). This may be allowed for some headers (e.g. Accept but not
-            // allowed by others (e.g. Content-Length). The parser has to decide if this is valid or not.
-            Debug.Assert((value == null) || ((index >= 0) && (index <= value.Length)));
-
-            // If a parser returns 'null', it means there was no value, but that's valid (e.g. "Accept: "). The caller
-            // can ignore the value.
-            object result = null;
-            if (!TryParseValue(value, storeValue, ref index, out result))
-            {
-                throw new FormatException(string.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value,
-                    value == null ? "<null>" : value.Substring(index)));
-            }
-            return result;
-        }
-
         // If ValueType is a custom header value type (e.g. NameValueHeaderValue) it already implements ToString() correctly.
         // However for existing types like int, byte[], DateTimeOffset we can't override ToString(). Therefore the 
         // parser provides a ToString() virtual method that can be overridden by derived types to correctly serialize 

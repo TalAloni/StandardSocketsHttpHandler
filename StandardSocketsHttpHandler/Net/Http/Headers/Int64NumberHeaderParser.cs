@@ -28,27 +28,5 @@ namespace System.Net.Http.Headers
 
             return ((long)value).ToString(NumberFormatInfo.InvariantInfo);
         }
-
-        protected override int GetParsedValueLength(string value, int startIndex, object storeValue,
-            out object parsedValue)
-        {
-            parsedValue = null;
-
-            int numberLength = HttpRuleParser.GetNumberLength(value, startIndex, false);
-
-            if ((numberLength == 0) || (numberLength > HttpRuleParser.MaxInt64Digits))
-            {
-                return 0;
-            }
-
-            long result = 0;
-            if (!HeaderUtilities.TryParseInt64(value, startIndex, numberLength, out result))
-            {
-                return 0;
-            }
-
-            parsedValue = result;
-            return numberLength;
-        }
     }
 }

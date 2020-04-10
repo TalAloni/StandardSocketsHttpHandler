@@ -22,39 +22,6 @@ namespace System.Net.Http.Headers
             _uriKind = uriKind;
         }
 
-        public override bool TryParseValue(string value, object storeValue, ref int index, out object parsedValue)
-        {
-            parsedValue = null;
-
-            // Some headers support empty/null values. This one doesn't.
-            if (string.IsNullOrEmpty(value) || (index == value.Length))
-            {
-                return false;
-            }
-
-            string uriString = value;
-            if (index > 0)
-            {
-                uriString = value.Substring(index);
-            }
-
-            Uri uri;
-            if (!Uri.TryCreate(uriString, _uriKind, out uri))
-            {
-                // Some servers send the host names in Utf-8.
-                uriString = DecodeUtf8FromString(uriString);
-
-                if (!Uri.TryCreate(uriString, _uriKind, out uri))
-                {
-                    return false;
-                }
-            }
-
-            index = value.Length;
-            parsedValue = uri;
-            return true;
-        }
-
         // TODO (#5525): This is a helper method copied from WebHeaderCollection.HeaderEncoding.DecodeUtf8FromString.
         // Merge this code and move to System.Net.Common.
         //
