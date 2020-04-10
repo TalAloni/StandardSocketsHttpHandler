@@ -541,7 +541,7 @@ namespace System.Net.Http
                         return await connection.SendAsync(request, cancellationToken).ConfigureAwait(false);
                     }
                 }
-                catch (HttpRequestException e) when (!isNewConnection && e.AllowRetry)
+                catch (HttpRetryableRequestException e) when (!isNewConnection && e.AllowRetry)
                 {
                     if (NetEventSource.IsEnabled)
                     {
@@ -549,6 +549,12 @@ namespace System.Net.Http
                     }
 
                     // Eat exception and try again.
+                }
+                catch (HttpRetryableRequestException e)
+                {
+                    // Note: We do not preserve stack trace
+                    Exception httpRequestException = new HttpRequestException(e.Message, e.InnerException);
+                    throw httpRequestException;
                 }
             }
         }
