@@ -9,7 +9,7 @@ namespace System.Net.Http.Headers
     internal class MediaTypeHeaderParser : BaseHeaderParser
     {
         private bool _supportsMultipleValues;
-        private Func<MediaTypeHeaderValue> _mediaTypeCreator;
+        private Func<string, MediaTypeHeaderValue> _mediaTypeCreator;
 
         internal static readonly MediaTypeHeaderParser SingleValueParser = new MediaTypeHeaderParser(false,
             CreateMediaType);
@@ -18,7 +18,7 @@ namespace System.Net.Http.Headers
         internal static readonly MediaTypeHeaderParser MultipleValuesParser = new MediaTypeHeaderParser(true,
             CreateMediaTypeWithQuality);
 
-        private MediaTypeHeaderParser(bool supportsMultipleValues, Func<MediaTypeHeaderValue> mediaTypeCreator)
+        private MediaTypeHeaderParser(bool supportsMultipleValues, Func<string, MediaTypeHeaderValue> mediaTypeCreator)
             : base(supportsMultipleValues)
         {
             Debug.Assert(mediaTypeCreator != null);
@@ -27,14 +27,14 @@ namespace System.Net.Http.Headers
             _mediaTypeCreator = mediaTypeCreator;
         }
 
-        private static MediaTypeHeaderValue CreateMediaType()
+        private static MediaTypeHeaderValue CreateMediaType(string mediaType)
         {
-            return new MediaTypeHeaderValue();
+            return new MediaTypeHeaderValue(mediaType);
         }
 
-        private static MediaTypeHeaderValue CreateMediaTypeWithQuality()
+        private static MediaTypeHeaderValue CreateMediaTypeWithQuality(string mediaType)
         {
-            return new MediaTypeWithQualityHeaderValue();
+            return new MediaTypeWithQualityHeaderValue(mediaType);
         }
     }
 }
