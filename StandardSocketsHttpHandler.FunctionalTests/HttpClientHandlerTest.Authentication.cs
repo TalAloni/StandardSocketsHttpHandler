@@ -274,7 +274,6 @@ namespace System.Net.Http.Functional.Tests
         [InlineData((HttpStatusCode)208)] // AlreadyReported
         [InlineData((HttpStatusCode)226)] // IMUsed
         [InlineData(HttpStatusCode.Ambiguous)]
-        [InlineData(HttpStatusCode.Ambiguous)]
         [InlineData(HttpStatusCode.NotModified)]
         [InlineData(HttpStatusCode.UseProxy)]
         [InlineData(HttpStatusCode.Unused)]
