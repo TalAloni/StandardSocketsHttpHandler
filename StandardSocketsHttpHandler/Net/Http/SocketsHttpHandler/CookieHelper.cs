@@ -13,7 +13,7 @@ namespace System.Net.Http
         public static void ProcessReceivedCookies(HttpResponseMessage response, CookieContainer cookieContainer)
         {
             IEnumerable<string> values;
-            if (response.Headers.TryGetValues(KnownHeaders.SetCookie.Descriptor, out values))
+            if (response.Headers.TryGetValues(KnownHeaders.SetCookie.Descriptor.Name, out values))
             {
                 // The header values are always a string[]
                 var valuesArray = (string[])values;

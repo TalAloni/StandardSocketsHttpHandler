@@ -954,15 +954,15 @@ namespace System.Net.Http
             // Request headers returned on the response must be treated as custom headers.
             if (isFromTrailer)
             {
-                response.TrailingHeaders.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader() : descriptor, headerValue);
+                response.TrailingHeaders.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader().Name : descriptor.Name, headerValue);
             }
             else if (descriptor.HeaderType == HttpHeaderType.Content)
             {
-                response.Content.Headers.TryAddWithoutValidation(descriptor, headerValue);
+                response.Content.Headers.TryAddWithoutValidation(descriptor.Name, headerValue);
             }
             else
             {
-                response.Headers.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader() : descriptor, headerValue);
+                response.Headers.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader().Name : descriptor.Name, headerValue);
             }
         }
 

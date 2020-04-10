@@ -516,12 +516,12 @@ namespace System.Net.Http
                         else if (descriptor.HeaderType == HttpHeaderType.Content)
                         {
                             Debug.Assert(_response != null);
-                            _response.Content.Headers.TryAddWithoutValidation(descriptor, headerValue);
+                            _response.Content.Headers.TryAddWithoutValidation(descriptor.Name, headerValue);
                         }
                         else
                         {
                             Debug.Assert(_response != null);
-                            _response.Headers.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader() : descriptor, headerValue);
+                            _response.Headers.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader().Name : descriptor.Name, headerValue);
                         }
                     }
                 }
@@ -962,7 +962,7 @@ namespace System.Net.Http
                 {
                     foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
                     {
-                        responseMessage.TrailingHeaders.TryAddWithoutValidation(trailer.Key, trailer.Value);
+                        responseMessage.TrailingHeaders.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
                     }
                     _trailers.Clear();
                 }
