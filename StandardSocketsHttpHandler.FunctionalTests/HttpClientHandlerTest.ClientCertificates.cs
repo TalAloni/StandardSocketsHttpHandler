@@ -17,13 +17,6 @@ namespace System.Net.Http.Functional.Tests
 
     public abstract class HttpClientHandler_ClientCertificates_Test : HttpClientTestBase
     {
-        public bool CanTestCertificates =>
-            Capability.IsTrustedRootCertificateInstalled() &&
-            (BackendSupportsCustomCertificateHandling || Capability.AreHostsFileNamesInstalled());
-
-        public bool CanTestClientCertificates =>
-            CanTestCertificates && BackendSupportsCustomCertificateHandling;
-
         public HttpClientHandler_ClientCertificates_Test(ITestOutputHelper output)
         {
             _output = output;
@@ -104,100 +97,6 @@ namespace System.Net.Http.Functional.Tests
             {
                 await Assert.ThrowsAsync<PlatformNotSupportedException>(() => client.GetAsync(Configuration.Http.SecureRemoteEchoServer));
             }
-        }
-
-        [OuterLoop] // TODO: Issue #11345
-        [Fact]
-        public void Manual_SendClientCertificateWithClientAuthEKUToRemoteServer_OK()
-        {
-            if (!CanTestClientCertificates) // can't use [Conditional*] right now as it's evaluated at the wrong time for SocketsHttpHandler
-            {
-                _output.WriteLine($"Skipping {nameof(Manual_SendClientCertificateWithClientAuthEKUToRemoteServer_OK)}()");
-                return;
-            }
-
-            // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-            // the same process as the other tests. Each test needs to be isolated to its own process.
-            // See dicussion: https://github.com/dotnet/corefx/issues/21945
-            RemoteInvoke(async useSocketsHttpHandlerString =>
-            {
-                var cert = Configuration.Certificates.GetClientCertificate();
-                HttpClientHandler handler = CreateHttpClientHandler(useSocketsHttpHandlerString);
-                handler.ClientCertificates.Add(cert);
-                using (var client = new HttpClient(handler))
-                {
-                    HttpResponseMessage response = await client.GetAsync(Configuration.Http.EchoClientCertificateRemoteServer);
-                    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-                    string body = await response.Content.ReadAsStringAsync();
-                    byte[] bytes = Convert.FromBase64String(body);
-                    var receivedCert = new X509Certificate2(bytes);
-                    Assert.Equal(cert, receivedCert);
-
-                    return SuccessExitCode;
-                }
-            }, UseSocketsHttpHandler.ToString()).Dispose();
-        }
-
-        [OuterLoop] // TODO: Issue #11345
-        [Fact]
-        public void Manual_SendClientCertificateWithServerAuthEKUToRemoteServer_Forbidden()
-        {
-            if (!CanTestClientCertificates) // can't use [Conditional*] right now as it's evaluated at the wrong time for SocketsHttpHandler
-            {
-                _output.WriteLine($"Skipping {nameof(Manual_SendClientCertificateWithServerAuthEKUToRemoteServer_Forbidden)}()");
-                return;
-            }
-
-            // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-            // the same process as the other tests. Each test needs to be isolated to its own process.
-            // See dicussion: https://github.com/dotnet/corefx/issues/21945
-            RemoteInvoke(async useSocketsHttpHandlerString =>
-            {
-                var cert = Configuration.Certificates.GetServerCertificate();
-                HttpClientHandler handler = CreateHttpClientHandler(useSocketsHttpHandlerString);
-                handler.ClientCertificates.Add(cert);
-                using (var client = new HttpClient(handler))
-                {
-                    HttpResponseMessage response = await client.GetAsync(Configuration.Http.EchoClientCertificateRemoteServer);
-                    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-
-                    return SuccessExitCode;
-                }
-            }, UseSocketsHttpHandler.ToString()).Dispose();
-        }
-
-        [OuterLoop] // TODO: Issue #11345
-        [Fact]
-        public void Manual_SendClientCertificateWithNoEKUToRemoteServer_OK()
-        {
-            if (!CanTestClientCertificates) // can't use [Conditional*] right now as it's evaluated at the wrong time for SocketsHttpHandler
-            {
-                _output.WriteLine($"Skipping {nameof(Manual_SendClientCertificateWithNoEKUToRemoteServer_OK)}()");
-                return;
-            }
-
-            // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-            // the same process as the other tests. Each test needs to be isolated to its own process.
-            // See dicussion: https://github.com/dotnet/corefx/issues/21945
-            RemoteInvoke(async useSocketsHttpHandlerString =>
-            {
-                var cert = Configuration.Certificates.GetNoEKUCertificate();
-                HttpClientHandler handler = CreateHttpClientHandler(useSocketsHttpHandlerString);
-                handler.ClientCertificates.Add(cert);
-                using (var client = new HttpClient(handler))
-                {
-                    HttpResponseMessage response = await client.GetAsync(Configuration.Http.EchoClientCertificateRemoteServer);
-                    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-                    string body = await response.Content.ReadAsStringAsync();
-                    byte[] bytes = Convert.FromBase64String(body);
-                    var receivedCert = new X509Certificate2(bytes);
-                    Assert.Equal(cert, receivedCert);
-
-                    return SuccessExitCode;
-                }
-            }, UseSocketsHttpHandler.ToString()).Dispose();
         }
 
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "dotnet/corefx #20010")]

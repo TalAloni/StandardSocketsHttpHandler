@@ -684,24 +684,16 @@ namespace System.Net.Http.Functional.Tests
 
         [OuterLoop] // TODO: Issue #11345
         [Fact]
-        public void GetAsync_ServerNeedsAuthAndNoCredential_StatusCodeUnauthorized()
+        public async void GetAsync_ServerNeedsAuthAndNoCredential_StatusCodeUnauthorized()
         {
-            // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-            // the same process as the other tests. Each test needs to be isolated to its own process.
-            // See dicussion: https://github.com/dotnet/corefx/issues/21945
-            RemoteInvoke(async useSocketsHttpHandlerString =>
+            using (var client = CreateHttpClient())
             {
-                using (var client = CreateHttpClient(useSocketsHttpHandlerString))
+                Uri uri = Configuration.Http.BasicAuthUriForCreds(secure: false, userName: Username, password: Password);
+                using (HttpResponseMessage response = await client.GetAsync(uri))
                 {
-                    Uri uri = Configuration.Http.BasicAuthUriForCreds(secure: false, userName: Username, password: Password);
-                    using (HttpResponseMessage response = await client.GetAsync(uri))
-                    {
-                        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-                    }
-
-                    return SuccessExitCode;
+                    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
                 }
-            }, UseSocketsHttpHandler.ToString()).Dispose();
+            }
         }
 
         [OuterLoop] // TODO: Issue #11345

@@ -2,9 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Diagnostics;
-using Xunit;
-
 namespace System
 {
     public static partial class TestEnvironment
@@ -12,13 +9,11 @@ namespace System
         /// <summary>
         /// Check if the stress mode is enabled.
         /// </summary>
-        /// <value> true if the environment variable COREFX_STRESS set to '1' or 'true'. returns false otherwise</value>
         public static bool IsStressModeEnabled
         {
             get
             {
-                string value = Environment.GetEnvironmentVariable("COREFX_STRESS");
-                return value != null && (value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase));
+                return true;
             }
         }
     }

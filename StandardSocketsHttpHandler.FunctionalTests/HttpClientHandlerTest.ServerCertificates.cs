@@ -401,25 +401,7 @@ namespace System.Net.Http.Functional.Tests
 
             try
             {
-                if (PlatformDetection.IsUap)
-                {
-                    // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-                    // the same process as the other tests. Each test needs to be isolated to its own process.
-                    // See dicussion: https://github.com/dotnet/corefx/issues/21945
-                    RemoteInvoke((remoteUrl, remoteExpectedErrors, useSocketsHttpHandlerString) =>
-                    {
-                        UseCallback_BadCertificate_ExpectedPolicyErrors_Helper(
-                            remoteUrl,
-                            bool.Parse(useSocketsHttpHandlerString),
-                            (SslPolicyErrors)Enum.Parse(typeof(SslPolicyErrors), remoteExpectedErrors)).Wait();
-
-                        return SuccessExitCode;
-                    }, url, expectedErrors.ToString(), UseSocketsHttpHandler.ToString()).Dispose();
-                }
-                else
-                {
-                    await UseCallback_BadCertificate_ExpectedPolicyErrors_Helper(url, UseSocketsHttpHandler, expectedErrors);
-                }
+                await UseCallback_BadCertificate_ExpectedPolicyErrors_Helper(url, UseSocketsHttpHandler, expectedErrors);
             }
             catch (HttpRequestException e) when (e.InnerException?.GetType().Name == "WinHttpException" &&
                 e.InnerException.HResult == SEC_E_BUFFER_TOO_SMALL &&

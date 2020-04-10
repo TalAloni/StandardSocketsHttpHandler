@@ -42,26 +42,6 @@ namespace System.Net.Http.Functional.Tests
         protected override bool UseSocketsHttpHandler => true;
     }
 
-    public sealed class SocketsHttpHandler_DiagnosticsTest : DiagnosticsTest
-    {
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_HttpClient_SelectedSites_Test : HttpClient_SelectedSites_Test
-    {
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_HttpClientEKUTest : HttpClientEKUTest
-    {
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_HttpClientHandler_Decompression_Tests : HttpClientHandler_Decompression_Test
-    {
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
     public sealed class SocketsHttpHandler_HttpClientHandler_DangerousAcceptAllCertificatesValidator_Test : HttpClientHandler_DangerousAcceptAllCertificatesValidator_Test
     {
         protected override bool UseSocketsHttpHandler => true;
@@ -70,11 +50,6 @@ namespace System.Net.Http.Functional.Tests
     public sealed class SocketsHttpHandler_HttpClientHandler_ClientCertificates_Test : HttpClientHandler_ClientCertificates_Test
     {
         public SocketsHttpHandler_HttpClientHandler_ClientCertificates_Test(ITestOutputHelper output) : base(output) { }
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_HttpClientHandler_DefaultProxyCredentials_Test : HttpClientHandler_DefaultProxyCredentials_Test
-    {
         protected override bool UseSocketsHttpHandler => true;
     }
 
@@ -368,18 +343,6 @@ namespace System.Net.Http.Functional.Tests
     {
         public SocketsHttpHandler_HttpClientHandlerTest(ITestOutputHelper output) : base(output) { }
         protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_DefaultCredentialsTest : DefaultCredentialsTest
-    {
-        public SocketsHttpHandler_DefaultCredentialsTest(ITestOutputHelper output) : base(output) { }
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_IdnaProtocolTests : IdnaProtocolTests
-    {
-        protected override bool UseSocketsHttpHandler => true;
-        protected override bool SupportsIdna => true;
     }
 
     public sealed class SocketsHttpHandler_HttpRetryProtocolTests : HttpRetryProtocolTests
@@ -976,50 +939,6 @@ namespace System.Net.Http.Functional.Tests
                 }
             }
         }
-
-        [OuterLoop]
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void ConnectionsPooledThenDisposed_NoUnobservedTaskExceptions(bool secure)
-        {
-            RemoteInvoke(async secureString =>
-            {
-                var releaseServer = new TaskCompletionSource<bool>();
-                await LoopbackServer.CreateClientAndServerAsync(async uri =>
-                {
-                    using (var handler = new SocketsHttpHandler())
-                    using (var client = new HttpClient(handler))
-                    {
-                        handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-                        handler.PooledConnectionLifetime = TimeSpan.FromMilliseconds(1);
-
-                        var exceptions = new List<Exception>();
-                        TaskScheduler.UnobservedTaskException += (s, e) => exceptions.Add(e.Exception);
-
-                        await client.GetStringAsync(uri);
-                        await Task.Delay(10); // any value >= the lifetime
-                        Task ignored = client.GetStringAsync(uri); // force the pool to look for the previous connection and find it's too old
-                        await Task.Delay(100); // give some time for the connection close to fail pending reads
-
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-
-                        // Note that there are race conditions here such that we may not catch every failure,
-                        // and thus could have some false negatives, but there won't be any false positives.
-                        Assert.True(exceptions.Count == 0, string.Concat(exceptions));
-
-                        releaseServer.SetResult(true);
-                    }
-                }, server => server.AcceptConnectionAsync(async connection =>
-                {
-                    await connection.ReadRequestHeaderAndSendResponseAsync(content: "hello world");
-                    await releaseServer.Task;
-                }),
-                new LoopbackServer.Options { UseSsl = bool.Parse(secureString) });
-                return SuccessExitCode;
-            }, secure.ToString()).Dispose();
-        }
     }
 
     public sealed class SocketsHttpHandler_PublicAPIBehavior_Test
@@ -1349,86 +1268,6 @@ namespace System.Net.Http.Functional.Tests
                 Assert.Throws(expectedExceptionType, () => handler.UseCookies = false);
                 Assert.Throws(expectedExceptionType, () => handler.UseProxy = false);
             }
-        }
-    }
-
-    public sealed class SocketsHttpHandler_ExternalConfiguration_Test : HttpClientTestBase
-    {
-        private const string EnvironmentVariableSettingName = "DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER";
-        private const string AppContextSettingName = "System.Net.Http.UseSocketsHttpHandler";
-
-        private static bool UseSocketsHttpHandlerEnvironmentVariableIsNotSet =>
-            string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvironmentVariableSettingName));
-
-        [ConditionalTheory(nameof(UseSocketsHttpHandlerEnvironmentVariableIsNotSet))]
-        [InlineData("true", true)]
-        [InlineData("TRUE", true)]
-        [InlineData("tRuE", true)]
-        [InlineData("1", true)]
-        [InlineData("0", false)]
-        [InlineData("false", false)]
-        [InlineData("helloworld", true)]
-        [InlineData("", true)]
-        public void HttpClientHandler_SettingEnvironmentVariableChangesDefault(string envVarValue, bool expectedUseSocketsHandler)
-        {
-            RemoteInvoke((innerEnvVarValue, innerExpectedUseSocketsHandler) =>
-            {
-                Environment.SetEnvironmentVariable(EnvironmentVariableSettingName, innerEnvVarValue);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.Equal(bool.Parse(innerExpectedUseSocketsHandler), IsSocketsHttpHandler(handler));
-                }
-                return SuccessExitCode;
-            }, envVarValue, expectedUseSocketsHandler.ToString()).Dispose();
-        }
-
-        [Fact]
-        public void HttpClientHandler_SettingAppContextChangesDefault()
-        {
-            RemoteInvoke(() =>
-            {
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: true);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.True(IsSocketsHttpHandler(handler));
-                }
-
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: false);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.False(IsSocketsHttpHandler(handler));
-                }
-
-                return SuccessExitCode;
-            }).Dispose();
-        }
-
-        [Fact]
-        public void HttpClientHandler_AppContextOverridesEnvironmentVariable()
-        {
-            RemoteInvoke(() =>
-            {
-                Environment.SetEnvironmentVariable(EnvironmentVariableSettingName, "true");
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.True(IsSocketsHttpHandler(handler));
-                }
-
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: false);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.False(IsSocketsHttpHandler(handler));
-                }
-
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: true);
-                Environment.SetEnvironmentVariable(EnvironmentVariableSettingName, null);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.True(IsSocketsHttpHandler(handler));
-                }
-
-                return SuccessExitCode;
-            }).Dispose();
         }
     }
 }

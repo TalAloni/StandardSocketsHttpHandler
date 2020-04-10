@@ -32,7 +32,7 @@ namespace System
             {
                 try
                 {
-                    return Marshal.PtrToStringUTF8(gnu_get_libc_release());
+                    return Marshal.PtrToStringAnsi(gnu_get_libc_release());
                 }
                 catch (Exception e) when (e is DllNotFoundException || e is EntryPointNotFoundException)
                 {
@@ -51,7 +51,7 @@ namespace System
             {
                 try
                 {
-                    return Marshal.PtrToStringUTF8(gnu_get_libc_version());
+                    return Marshal.PtrToStringAnsi(gnu_get_libc_version());
                 }
                 catch (Exception e) when (e is DllNotFoundException || e is EntryPointNotFoundException)
                 {

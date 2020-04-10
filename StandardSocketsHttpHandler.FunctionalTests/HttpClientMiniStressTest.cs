@@ -29,6 +29,7 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [ConditionalTheory(typeof(TestEnvironment), nameof(TestEnvironment.IsStressModeEnabled))]
+        [MemberData(nameof(GetStressOptions))]
         public async Task SingleClient_ManyGets_Async(int numRequests, int dop, HttpCompletionOption completionOption)
         {
             string responseText = CreateResponse("abcdefghijklmnopqrstuvwxyz");

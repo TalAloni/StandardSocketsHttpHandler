@@ -8,7 +8,7 @@ using System.Security.Authentication;
 
 namespace System.Net.Http.Functional.Tests
 {
-    public abstract class HttpClientTestBase : RemoteExecutorTestBase
+    public abstract class HttpClientTestBase
     {
         // SP_PROT_TLS1_3 / SslProtocols.Tls13 in netcoreapp3.0
         protected const SslProtocols Tls13Protocol = (SslProtocols)12288;
