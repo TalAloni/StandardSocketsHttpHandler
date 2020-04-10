@@ -18,6 +18,8 @@ namespace System.Net.Http.Functional.Tests
     [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "SslProtocols not supported on UAP")]
     public abstract partial class HttpClientHandler_SslProtocols_Test : HttpClientTestBase
     {
+        private static bool IsWindows10Version1607OrGreater => PlatformDetection.IsWindows10Version1607OrGreater;
+
         [Fact]
         public void DefaultProtocols_MatchesExpected()
         {
@@ -214,7 +216,7 @@ namespace System.Net.Http.Functional.Tests
         // We have tests that validate with SslStream, but that's limited by what the current OS supports.
         // This tests provides additional validation against an external server.
         [OuterLoop("Avoid www.ssllabs.com dependency in innerloop.")]
-        [Theory]
+        [ConditionalTheory(nameof(IsWindows10Version1607OrGreater))]
         [MemberData(nameof(NotSupportedSSLVersionServers))]
         public async Task GetAsync_UnsupportedSSLVersion_Throws(SslProtocols sslProtocols, string url)
         {
