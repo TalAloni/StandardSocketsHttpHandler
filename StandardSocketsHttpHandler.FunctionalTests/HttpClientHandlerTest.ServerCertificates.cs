@@ -24,45 +24,34 @@ namespace System.Net.Http.Functional.Tests
             (BackendSupportsCustomCertificateHandling && ClientSupportsDHECipherSuites);
 
         [Fact]
-        [SkipOnTargetFramework(~TargetFrameworkMonikers.Uap)]
-        public void Ctor_ExpectedDefaultPropertyValues_UapPlatform()
-        {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
-            {
-                Assert.Null(handler.ServerCertificateCustomValidationCallback);
-                Assert.True(handler.CheckCertificateRevocationList);
-            }
-        }
-
-        [Fact]
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)]
         public void Ctor_ExpectedDefaultValues_NotUapPlatform()
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             {
-                Assert.Null(handler.ServerCertificateCustomValidationCallback);
-                Assert.False(handler.CheckCertificateRevocationList);
+                Assert.Null(handler.SslOptions.RemoteCertificateValidationCallback);
+                Assert.Equal(X509RevocationMode.NoCheck, handler.SslOptions.CertificateRevocationCheckMode);
             }
         }
 
         [Fact]
         public void ServerCertificateCustomValidationCallback_SetGet_Roundtrips()
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             {
-                Assert.Null(handler.ServerCertificateCustomValidationCallback);
+                Assert.Null(handler.SslOptions.RemoteCertificateValidationCallback);
 
-                Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> callback1 = (req, cert, chain, policy) => throw new NotImplementedException("callback1");
-                Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> callback2 = (req, cert, chain, policy) => throw new NotImplementedException("callback2");
+                RemoteCertificateValidationCallback callback1 = (sender, cert, chain, policy) => throw new NotImplementedException("callback1");
+                RemoteCertificateValidationCallback callback2 = (sender, cert, chain, policy) => throw new NotImplementedException("callback2");
 
-                handler.ServerCertificateCustomValidationCallback = callback1;
-                Assert.Same(callback1, handler.ServerCertificateCustomValidationCallback);
+                handler.SslOptions.RemoteCertificateValidationCallback = callback1;
+                Assert.Same(callback1, handler.SslOptions.RemoteCertificateValidationCallback);
 
-                handler.ServerCertificateCustomValidationCallback = callback2;
-                Assert.Same(callback2, handler.ServerCertificateCustomValidationCallback);
+                handler.SslOptions.RemoteCertificateValidationCallback = callback2;
+                Assert.Same(callback2, handler.SslOptions.RemoteCertificateValidationCallback);
 
-                handler.ServerCertificateCustomValidationCallback = null;
-                Assert.Null(handler.ServerCertificateCustomValidationCallback);
+                handler.SslOptions.RemoteCertificateValidationCallback = null;
+                Assert.Null(handler.SslOptions.RemoteCertificateValidationCallback);
             }
         }
 
@@ -70,7 +59,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task NoCallback_ValidCertificate_SuccessAndExpectedPropertyBehavior()
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (var client = new HttpClient(handler))
             {
                 using (HttpResponseMessage response = await client.GetAsync(Configuration.Http.SecureRemoteEchoServer))
@@ -78,8 +67,9 @@ namespace System.Net.Http.Functional.Tests
                     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 }
 
-                Assert.Throws<InvalidOperationException>(() => handler.ServerCertificateCustomValidationCallback = null);
-                Assert.Throws<InvalidOperationException>(() => handler.CheckCertificateRevocationList = false);
+                // It is HttpClientHandler that wraps SocketsHttpHandler that throws these exception 
+                // Assert.Throws<InvalidOperationException>(() => handler.SslOptions.RemoteCertificateValidationCallback = null);
+                // Assert.Throws<InvalidOperationException>(() => handler.SslOptions.CertificateRevocationCheckMode = X509RevocationMode.NoCheck);
             }
         }
 
@@ -105,8 +95,8 @@ namespace System.Net.Http.Functional.Tests
                 };
             using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create(options))
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
-                handler.ServerCertificateCustomValidationCallback = delegate { return true; };
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
+                handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
                 handler.Proxy = new WebProxy(proxyServer.Uri)
                 {
                     Credentials = new NetworkCredential("rightusername", "rightpassword")
@@ -147,9 +137,9 @@ namespace System.Net.Http.Functional.Tests
                 };
             using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create(options))
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 handler.Proxy = new WebProxy(proxyServer.Uri);
-                handler.ServerCertificateCustomValidationCallback = delegate { return true; };
+                handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
                 using (var client = new HttpClient(handler))
                 using (HttpResponseMessage response = await client.PostAsync(
                     Configuration.Http.SecureRemoteEchoServer,
@@ -170,11 +160,11 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (var client = new HttpClient(handler))
             {
                 bool callbackCalled = false;
-                handler.ServerCertificateCustomValidationCallback = delegate { callbackCalled = true; return true; };
+                handler.SslOptions.RemoteCertificateValidationCallback = delegate { callbackCalled = true; return true; };
 
                 using (HttpResponseMessage response = await client.GetAsync(Configuration.Http.RemoteEchoServer))
                 {
@@ -211,14 +201,14 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (var client = new HttpClient(handler))
             {
                 bool callbackCalled = false;
-                handler.CheckCertificateRevocationList = checkRevocation;
-                handler.ServerCertificateCustomValidationCallback = (request, cert, chain, errors) => {
+                handler.SslOptions.CertificateRevocationCheckMode = X509RevocationMode.Online;
+                handler.SslOptions.RemoteCertificateValidationCallback = (sender, cert, chain, errors) => {
                     callbackCalled = true;
-                    Assert.NotNull(request);
+                    Assert.NotNull(sender);
 
                     X509ChainStatusFlags flags = chain.ChainStatus.Aggregate(X509ChainStatusFlags.NoError, (cur, status) => cur | status.Status);
                     bool ignoreErrors = // https://github.com/dotnet/corefx/issues/21922#issuecomment-315555237
@@ -235,7 +225,7 @@ namespace System.Net.Http.Functional.Tests
                     // the getter always returns true. So, for this next Assert, it is better to get the property
                     // value back from the handler instead of using the parameter value of the test.
                     Assert.Equal(
-                        handler.CheckCertificateRevocationList ? X509RevocationMode.Online : X509RevocationMode.NoCheck,
+                        handler.SslOptions.CertificateRevocationCheckMode,
                         chain.ChainPolicy.RevocationMode);
                     return true;
                 };
@@ -259,10 +249,10 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (var client = new HttpClient(handler))
             {
-                handler.ServerCertificateCustomValidationCallback = delegate { return false; };
+                handler.SslOptions.RemoteCertificateValidationCallback = delegate { return false; };
                 await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync(Configuration.Http.SecureRemoteEchoServer));
             }
         }
@@ -277,11 +267,11 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (var client = new HttpClient(handler))
             {
                 var e = new DivideByZeroException();
-                handler.ServerCertificateCustomValidationCallback = delegate { throw e; };
+                handler.SslOptions.RemoteCertificateValidationCallback = delegate { throw e; };
                 
                 HttpRequestException ex = await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync(Configuration.Http.SecureRemoteEchoServer));
                 Assert.Same(e, ex.GetBaseException());
@@ -340,8 +330,8 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
-            handler.CheckCertificateRevocationList = true;
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
+            handler.SslOptions.CertificateRevocationCheckMode = X509RevocationMode.Online;
             using (var client = new HttpClient(handler))
             {
                 await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync(Configuration.Http.RevokedCertRemoteServer));
@@ -363,15 +353,15 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler(useSocketsHttpHandler);
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (var client = new HttpClient(handler))
             {
                 bool callbackCalled = false;
 
-                handler.ServerCertificateCustomValidationCallback = (request, cert, chain, errors) =>
+                handler.SslOptions.RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
                 {
                     callbackCalled = true;
-                    Assert.NotNull(request);
+                    Assert.NotNull(sender);
                     Assert.NotNull(cert);
                     Assert.NotNull(chain);
                     Assert.Equal(expectedErrors, errors);
@@ -421,8 +411,8 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
-            handler.ServerCertificateCustomValidationCallback = delegate { return true; };
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
+            handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
             using (var client = new HttpClient(handler))
             {
                 await Assert.ThrowsAsync<PlatformNotSupportedException>(() => client.GetAsync(Configuration.Http.SecureRemoteEchoServer));
@@ -440,8 +430,8 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
-            handler.CheckCertificateRevocationList = true;
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
+            handler.SslOptions.CertificateRevocationCheckMode = X509RevocationMode.Online;
             using (var client = new HttpClient(handler))
             {
                 await Assert.ThrowsAsync<PlatformNotSupportedException>(() => client.GetAsync(Configuration.Http.SecureRemoteEchoServer));

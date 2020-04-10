@@ -304,7 +304,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = new HttpClient(handler))
             {
                 handler.MaxConnectionsPerServer = 1;

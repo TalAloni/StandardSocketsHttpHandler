@@ -13,7 +13,7 @@ namespace System.Net.Http.Functional.Tests
 {
     public abstract class HttpClientHandler_ResponseDrain_Test : HttpClientTestBase
     {
-        protected virtual void SetResponseDrainTimeout(HttpClientHandler handler, TimeSpan time) { }
+        protected virtual void SetResponseDrainTimeout(StandardSocketsHttpHandler handler, TimeSpan time) { }
 
         public enum ContentMode
         {
@@ -141,7 +141,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServer.CreateClientAndServerAsync(
                 async url =>
                 {
-                    HttpClientHandler handler = CreateHttpClientHandler();
+                    StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                     SetResponseDrainTimeout(handler, Timeout.InfiniteTimeSpan);
 
                     // Set MaxConnectionsPerServer to 1.  This will ensure we will wait for the previous request to drain (or fail to)
@@ -225,7 +225,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServer.CreateClientAndServerAsync(
                 async url =>
                 {
-                    HttpClientHandler handler = CreateHttpClientHandler();
+                    StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                     SetResponseDrainTimeout(handler, Timeout.InfiniteTimeSpan);
 
                     // Set MaxConnectionsPerServer to 1.  This will ensure we will wait for the previous request to drain (or fail to)
