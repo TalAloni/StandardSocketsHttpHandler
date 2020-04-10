@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace System.Net.Http
 {
-    internal sealed class DecompressionHandler : HttpMessageHandler
+    internal sealed class DecompressionHandler : StandardHttpMessageHandler
     {
-        private readonly HttpMessageHandler _innerHandler;
+        private readonly StandardHttpMessageHandler _innerHandler;
         private readonly DecompressionMethods _decompressionMethods;
 
         private const string s_gzip = "gzip";
@@ -24,7 +24,7 @@ namespace System.Net.Http
         private static readonly StringWithQualityHeaderValue s_deflateHeaderValue = new StringWithQualityHeaderValue(s_deflate);
         private static readonly StringWithQualityHeaderValue s_brotliHeaderValue = new StringWithQualityHeaderValue(s_brotli);
 
-        public DecompressionHandler(DecompressionMethods decompressionMethods, HttpMessageHandler innerHandler)
+        public DecompressionHandler(DecompressionMethods decompressionMethods, StandardHttpMessageHandler innerHandler)
         {
             Debug.Assert(decompressionMethods != DecompressionMethods.None);
             Debug.Assert(innerHandler != null);
@@ -37,7 +37,7 @@ namespace System.Net.Http
         internal bool DeflateEnabled => (_decompressionMethods & DecompressionMethods.Deflate) != 0;
         internal bool BrotliEnabled => (_decompressionMethods & DecompressionMethods.Brotli) != 0;
 
-        protected internal override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (GZipEnabled && !request.Headers.AcceptEncoding.Contains(s_gzipHeaderValue))
             {
@@ -54,7 +54,7 @@ namespace System.Net.Http
                 request.Headers.AcceptEncoding.Add(s_brotliHeaderValue);
             }
 
-            HttpResponseMessage response = await _innerHandler.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            HttpResponseMessage response = await _innerHandler.SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
 
             ICollection<string> contentEncodings = response.Content.Headers.ContentEncoding;
             if (contentEncodings.Count > 0)
