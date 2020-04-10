@@ -20,7 +20,6 @@ namespace System.Net.Security
                 AllowRenegotiation = options.AllowRenegotiation,
                 ApplicationProtocols = options.ApplicationProtocols != null ? new List<SslApplicationProtocol>(options.ApplicationProtocols) : null,
                 CertificateRevocationCheckMode = options.CertificateRevocationCheckMode,
-                CipherSuitesPolicy = options.CipherSuitesPolicy,
                 ClientCertificates = options.ClientCertificates,
                 EnabledSslProtocols = options.EnabledSslProtocols,
                 EncryptionPolicy = options.EncryptionPolicy,
