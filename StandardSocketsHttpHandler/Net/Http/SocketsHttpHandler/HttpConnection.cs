@@ -773,7 +773,8 @@ namespace System.Net.Http
             _canRetry = false;
 
             // Copy all of the data to the server.
-            await request.Content.CopyToAsync(stream, _transportContext, cancellationToken).ConfigureAwait(false);
+            // Note: We ignore cancellationToken, this may be inefficient if we intend to cancel lengthy requests.
+            await request.Content.CopyToAsync(stream, _transportContext).ConfigureAwait(false);
 
             // Finish the content; with a chunked upload, this includes writing the terminating chunk.
             await stream.FinishAsync().ConfigureAwait(false);

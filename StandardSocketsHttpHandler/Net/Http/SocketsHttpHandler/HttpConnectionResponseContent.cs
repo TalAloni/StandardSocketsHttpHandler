@@ -35,9 +35,9 @@ namespace System.Net.Http
         }
 
         protected sealed override Task SerializeToStreamAsync(Stream stream, TransportContext context) =>
-            SerializeToStreamAsync(stream, context, CancellationToken.None);
+            SerializeToStreamAsyncInternal(stream, context, CancellationToken.None);
 
-        internal sealed override async Task SerializeToStreamAsync(Stream stream, TransportContext context, CancellationToken cancellationToken)
+        internal async Task SerializeToStreamAsyncInternal(Stream stream, TransportContext context, CancellationToken cancellationToken)
         {
             Debug.Assert(stream != null);
 
@@ -48,7 +48,7 @@ namespace System.Net.Http
             }
         }
 
-        protected internal sealed override bool TryComputeLength(out long length)
+        protected sealed override bool TryComputeLength(out long length)
         {
             length = 0;
             return false;
@@ -56,9 +56,6 @@ namespace System.Net.Http
 
         protected sealed override Task<Stream> CreateContentReadStreamAsync() =>
             Task.FromResult<Stream>(ConsumeStream());
-
-        internal sealed override Stream TryCreateContentReadStream() =>
-            ConsumeStream();
 
         protected sealed override void Dispose(bool disposing)
         {

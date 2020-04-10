@@ -128,9 +128,9 @@ namespace System.Net.Http
             protected abstract Stream GetDecompressedStream(Stream originalStream);
 
             protected override Task SerializeToStreamAsync(Stream stream, TransportContext context) =>
-                SerializeToStreamAsync(stream, context, CancellationToken.None);
+                SerializeToStreamAsyncInternal(stream, context, CancellationToken.None);
 
-            internal override async Task SerializeToStreamAsync(Stream stream, TransportContext context, CancellationToken cancellationToken)
+            internal async Task SerializeToStreamAsyncInternal(Stream stream, TransportContext context, CancellationToken cancellationToken)
             {
                 using (Stream decompressedStream = await CreateContentReadStreamAsync().ConfigureAwait(false))
                 {
@@ -147,11 +147,11 @@ namespace System.Net.Http
 
                 _contentConsumed = true;
 
-                Stream originalStream = _originalContent.TryReadAsStream() ?? await _originalContent.ReadAsStreamAsync().ConfigureAwait(false);
+                Stream originalStream = await _originalContent.ReadAsStreamAsync().ConfigureAwait(false);
                 return GetDecompressedStream(originalStream);
             }
 
-            protected internal override bool TryComputeLength(out long length)
+            protected override bool TryComputeLength(out long length)
             {
                 length = 0;
                 return false;

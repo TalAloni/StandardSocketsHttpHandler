@@ -176,7 +176,8 @@ namespace System.Net.Http
                     {
                         using (Http2WriteStream writeStream = new Http2WriteStream(this))
                         {
-                            await _request.Content.CopyToAsync(writeStream, null, _requestBodyCancellationToken).ConfigureAwait(false);
+                            // Note: We ignore cancellationToken, this may be inefficient if we intend to cancel lengthy requests.
+                            await _request.Content.CopyToAsync(writeStream, null).ConfigureAwait(false);
                         }
                     }
 
