@@ -251,7 +251,7 @@ namespace System.Net.Http.HPack
                         {
                             if (_integerDecoder.Value == 0)
                             {
-                                throw new HPackDecodingException(SR.Format(SR.net_http_invalid_response_header_name, ""));
+                                throw new HPackDecodingException(String.Format(SR.net_http_invalid_response_header_name, ""));
                             }
 
                             OnStringLength(_integerDecoder.Value, nextState: State.HeaderName);
@@ -382,7 +382,7 @@ namespace System.Net.Http.HPack
             {
                 if (length > _maxResponseHeadersLength)
                 {
-                    throw new HPackDecodingException(SR.Format(SR.net_http_response_headers_exceeded_length, _maxResponseHeadersLength));
+                    throw new HPackDecodingException(String.Format(SR.net_http_response_headers_exceeded_length, _maxResponseHeadersLength));
                 }
 
                 _stringOctets = new byte[Math.Max(length, _stringOctets.Length * 2)];

@@ -403,7 +403,7 @@ namespace System.Net.Http
                 _headerBudgetRemaining -= name.Length + value.Length;
                 if (_headerBudgetRemaining < 0)
                 {
-                    throw new HttpRequestException(SR.Format(SR.net_http_response_headers_exceeded_length, _connection._pool.Settings._maxResponseHeadersLength * 1024L));
+                    throw new HttpRequestException(String.Format(SR.net_http_response_headers_exceeded_length, _connection._pool.Settings._maxResponseHeadersLength * 1024L));
                 }
 
                 // TODO: ISSUE 31309: Optimize HPACK static table decoding
@@ -431,7 +431,7 @@ namespace System.Net.Http
                             if (_responseProtocolState != ResponseProtocolState.ExpectingStatus)
                             {
                                 if (NetEventSource.IsEnabled) Trace("Received extra status header.");
-                                throw new HttpRequestException(SR.Format(SR.net_http_invalid_response_status_code, "duplicate status"));
+                                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_code, "duplicate status"));
                             }
 
                             byte status1, status2, status3;
@@ -440,7 +440,7 @@ namespace System.Net.Http
                                 !IsDigit(status2 = value[1]) ||
                                 !IsDigit(status3 = value[2]))
                             {
-                                throw new HttpRequestException(SR.Format(SR.net_http_invalid_response_status_code, Encoding.ASCII.GetString(value)));
+                                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_code, Encoding.ASCII.GetString(value)));
                             }
 
                             int statusValue = (100 * (status1 - '0') + 10 * (status2 - '0') + (status3 - '0'));
@@ -501,7 +501,7 @@ namespace System.Net.Http
                         if (!HeaderDescriptor.TryGet(name, out HeaderDescriptor descriptor))
                         {
                             // Invalid header name
-                            throw new HttpRequestException(SR.Format(SR.net_http_invalid_response_header_name, Encoding.ASCII.GetString(name)));
+                            throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_name, Encoding.ASCII.GetString(name)));
                         }
 
                         string headerValue = descriptor.GetHeaderValue(value);

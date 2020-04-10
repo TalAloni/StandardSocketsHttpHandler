@@ -145,7 +145,7 @@ namespace System.Net.Http.Headers
                     return qualityValue;
                 }
                 // If the stored value is an invalid quality value, just return null and log a warning. 
-                if (NetEventSource.IsEnabled) NetEventSource.Error(null, SR.Format(SR.net_http_log_headers_invalid_quality, qualityParameter.Value));
+                if (NetEventSource.IsEnabled) NetEventSource.Error(null, String.Format(SR.net_http_log_headers_invalid_quality, qualityParameter.Value));
             }
             return null;
         }
@@ -159,7 +159,7 @@ namespace System.Net.Http.Headers
 
             if (HttpRuleParser.GetTokenLength(value, 0) != value.Length)
             {
-                throw new FormatException(SR.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value, value));
+                throw new FormatException(String.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value, value));
             }
         }
 
