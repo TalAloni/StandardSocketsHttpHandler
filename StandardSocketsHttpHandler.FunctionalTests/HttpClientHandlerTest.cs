@@ -118,13 +118,6 @@ namespace System.Net.Http.Functional.Tests
         public HttpClientHandlerTest(ITestOutputHelper output)
         {
             _output = output;
-            if (PlatformDetection.IsFullFramework)
-            {
-                // On .NET Framework, the default limit for connections/server is very low (2). 
-                // On .NET Core, the default limit is higher. Since these tests run in parallel,
-                // the limit needs to be increased to avoid timeouts when running the tests.
-                System.Net.ServicePointManager.DefaultConnectionLimit = int.MaxValue;
-            }
         }
 
         [Fact]
@@ -215,7 +208,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RedirectStatusCodes))]
         public async Task DefaultHeaders_SetCredentials_ClearedOnRedirect(int statusCode)
         {
-            if (statusCode == 308 && (PlatformDetection.IsFullFramework || IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
+            if (statusCode == 308 && (IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
             {
                 // 308 redirects are not supported on old versions of WinHttp, or on .NET Framework.
                 return;
@@ -418,11 +411,7 @@ namespace System.Net.Http.Functional.Tests
                 TaskCanceledException ex = await Assert.ThrowsAsync<TaskCanceledException>(() =>
                     client.SendAsync(request, cts.Token));
                 Assert.True(cts.Token.IsCancellationRequested, "cts token IsCancellationRequested");
-                if (!PlatformDetection.IsFullFramework)
-                {
-                    // .NET Framework has bug where it doesn't propagate token information.
-                    Assert.True(ex.CancellationToken.IsCancellationRequested, "exception token IsCancellationRequested");
-                }
+                Assert.True(ex.CancellationToken.IsCancellationRequested, "exception token IsCancellationRequested");
             }
         }
 
@@ -689,7 +678,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RedirectStatusCodes))]
         public async Task GetAsync_AllowAutoRedirectFalse_RedirectFromHttpToHttp_StatusCodeRedirect(int statusCode)
         {
-            if (statusCode == 308 && (PlatformDetection.IsFullFramework || IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
+            if (statusCode == 308 && (IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
             {
                 // 308 redirects are not supported on old versions of WinHttp, or on .NET Framework.
                 return;
@@ -724,7 +713,7 @@ namespace System.Net.Http.Functional.Tests
                 newMethod = "POST";
             }
 
-            if (statusCode == 308 && (PlatformDetection.IsFullFramework || IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
+            if (statusCode == 308 && (IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
             {
                 // 308 redirects are not supported on old versions of WinHttp, or on .NET Framework.
                 return;
@@ -848,7 +837,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RedirectStatusCodes))]
         public async Task GetAsync_AllowAutoRedirectTrue_RedirectFromHttpToHttp_StatusCodeOK(int statusCode)
         {
-            if (statusCode == 308 && (PlatformDetection.IsFullFramework || IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
+            if (statusCode == 308 && (IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
             {
                 // 308 redirects are not supported on old versions of WinHttp, or on .NET Framework.
                 return;
@@ -894,7 +883,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework allows HTTPS to HTTP redirection")]
         [OuterLoop] // TODO: Issue #11345
         [Fact]
         public async Task GetAsync_AllowAutoRedirectTrue_RedirectFromHttpsToHttp_StatusCodeRedirect()
@@ -980,13 +968,6 @@ namespace System.Net.Http.Functional.Tests
             {
                 // Skip this test if using WinHttpHandler but on a release prior to Windows 10 Creators Update.
                 _output.WriteLine("Skipping test due to Windows 10 version prior to Version 1703.");
-                return;
-            }
-            else if (PlatformDetection.IsFullFramework)
-            {
-                // Skip this test if running on .NET Framework. Exceeding max redirections will not throw
-                // exception. Instead, it simply returns the 3xx response.
-                _output.WriteLine("Skipping test on .NET Framework due to behavior difference.");
                 return;
             }
 
@@ -1211,7 +1192,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RedirectStatusCodes))]
         public async Task GetAsync_CredentialIsCredentialCacheUriRedirect_StatusCodeOK(int statusCode)
         {
-            if (statusCode == 308 && (PlatformDetection.IsFullFramework || IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
+            if (statusCode == 308 && (IsWinHttpHandler && PlatformDetection.WindowsVersion < 10))
             {
                 // 308 redirects are not supported on old versions of WinHttp, or on .NET Framework.
                 return;
@@ -1425,10 +1406,9 @@ namespace System.Net.Http.Functional.Tests
                     Assert.Contains("Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==", headersSet);
                     Assert.Contains("Cache-Control: no-cache", headersSet);
                     Assert.Contains("Connection: close", headersSet, StringComparer.OrdinalIgnoreCase); // NetFxHandler uses "Close" vs "close"
-                    if (!IsNetfxHandler)
-                    {
-                        Assert.Contains("Cookie: $Version=1; Skin=new", headersSet);
-                    }
+
+                    Assert.Contains("Cookie: $Version=1; Skin=new", headersSet);
+
                     Assert.Contains("Date: Tue, 15 Nov 1994 08:12:31 GMT", headersSet);
                     Assert.Contains("Expect: 100-continue", headersSet);
                     Assert.Contains("Forwarded: for=192.0.2.60;proto=http;by=203.0.113.43", headersSet);
@@ -1461,10 +1441,9 @@ namespace System.Net.Http.Functional.Tests
                     Assert.Contains("X-Http-Method-Override: DELETE", headersSet);
                     Assert.Contains("X-ATT-DeviceId: GT-P7320/P7320XXLPG", headersSet);
                     Assert.Contains("X-Wap-Profile: http://wap.samsungmobile.com/uaprof/SGH-I777.xml", headersSet);
-                    if (!IsNetfxHandler)
-                    {
-                        Assert.Contains("Proxy-Connection: keep-alive", headersSet);
-                    }
+
+                    Assert.Contains("Proxy-Connection: keep-alive", headersSet);
+
                     Assert.Contains("X-UIDH: ...", headersSet);
                     Assert.Contains("X-Csrf-Token: i8XNjC4b8KVok4uw5RftR38Wgp2BFwql", headersSet);
                     Assert.Contains("X-Request-ID: f058ebd6-02f7-4d3f-942e-904344e8cde5, f058ebd6-02f7-4d3f-942e-904344e8cde5", headersSet);
@@ -1485,12 +1464,6 @@ namespace System.Net.Http.Functional.Tests
             if (IsCurlHandler && !string.IsNullOrEmpty(fold))
             {
                 // CurlHandler doesn't currently support folded headers.
-                return;
-            }
-
-            if (IsNetfxHandler && newline == "\n")
-            {
-                // NetFxHandler doesn't allow LF-only line endings.
                 return;
             }
 
@@ -1804,12 +1777,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_TransferEncodingSetButNoRequestContent_Throws()
         {
-            if (IsNetfxHandler)
-            {
-                // no exception thrown
-                return;
-            }
-
             var req = new HttpRequestMessage(HttpMethod.Post, "http://bing.com");
             req.Headers.TransferEncodingChunked = true;
             using (HttpClient c = CreateHttpClient())
@@ -1864,7 +1831,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "netfx's ConnectStream.ReadAsync tries to read beyond data already buffered, causing hangs #18864")]
         [OuterLoop] // TODO: Issue #11345
         [Fact]
         public async Task SendAsync_ReadFromSlowStreamingServer_PartialDataReturned()
@@ -1955,23 +1921,12 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Throws<ArgumentOutOfRangeException>(() => responseStream.BeginRead(new byte[1], 0, -1, null, null));
                         Assert.ThrowsAny<ArgumentException>(() => responseStream.BeginRead(new byte[1], 0, 2, null, null));
                         Assert.Throws<ArgumentNullException>(() => responseStream.EndRead(null));
-                        if (IsNetfxHandler)
-                        {
-                            // Argument exceptions on netfx are thrown out of these asynchronously rather than synchronously
-                            await Assert.ThrowsAsync<ArgumentNullException>(() => responseStream.ReadAsync(null, 0, 100, default));
-                            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => responseStream.ReadAsync(new byte[1], -1, 1, default));
-                            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => responseStream.ReadAsync(new byte[1], 2, 1, default));
-                            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => responseStream.ReadAsync(new byte[1], 0, -1, default));
-                            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => responseStream.ReadAsync(new byte[1], 0, 2, default));
-                        }
-                        else
-                        {
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.ReadAsync(null, 0, 100, default); });
-                            Assert.Throws<ArgumentOutOfRangeException>(() => { responseStream.ReadAsync(new byte[1], -1, 1, default); });
-                            Assert.ThrowsAny<ArgumentException>(() => { responseStream.ReadAsync(new byte[1], 2, 1, default); });
-                            Assert.Throws<ArgumentOutOfRangeException>(() => { responseStream.ReadAsync(new byte[1], 0, -1, default); });
-                            Assert.ThrowsAny<ArgumentException>(() => { responseStream.ReadAsync(new byte[1], 0, 2, default); });
-                        }
+
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.ReadAsync(null, 0, 100, default); });
+                        Assert.Throws<ArgumentOutOfRangeException>(() => { responseStream.ReadAsync(new byte[1], -1, 1, default); });
+                        Assert.ThrowsAny<ArgumentException>(() => { responseStream.ReadAsync(new byte[1], 2, 1, default); });
+                        Assert.Throws<ArgumentOutOfRangeException>(() => { responseStream.ReadAsync(new byte[1], 0, -1, default); });
+                        Assert.ThrowsAny<ArgumentException>(() => { responseStream.ReadAsync(new byte[1], 0, 2, default); });
 
                         // Various forms of reading
                         var buffer = new byte[1];
@@ -2097,16 +2052,14 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Throws<ArgumentOutOfRangeException>(() => responseStream.BeginRead(new byte[1], 0, -1, null, null));
                         Assert.ThrowsAny<ArgumentException>(() => responseStream.BeginRead(new byte[1], 0, 2, null, null));
                         Assert.Throws<ArgumentNullException>(() => responseStream.EndRead(null));
-                        if (!IsNetfxHandler)
-                        {
-                            // The netfx handler doesn't validate these arguments.
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.CopyTo(null); });
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.CopyToAsync(null, 100, default); });
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.CopyToAsync(null, 100, default); });
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.Read(null, 0, 100); });
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.ReadAsync(null, 0, 100, default); });
-                            Assert.Throws<ArgumentNullException>(() => { responseStream.BeginRead(null, 0, 100, null, null); });
-                        }
+
+                        // The netfx handler doesn't validate these arguments.
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.CopyTo(null); });
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.CopyToAsync(null, 100, default); });
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.CopyToAsync(null, 100, default); });
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.Read(null, 0, 100); });
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.ReadAsync(null, 0, 100, default); });
+                        Assert.Throws<ArgumentNullException>(() => { responseStream.BeginRead(null, 0, 100, null, null); });
 
                         // Empty reads
                         var buffer = new byte[1];
@@ -2502,7 +2455,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Doesn't send content for get requests")]
         [ActiveIssue(29802, TargetFrameworkMonikers.Uap)]
         [Fact]
         public async Task GetAsync_ExpectContinueTrue_NoContent_StillSendsHeader()
@@ -2546,9 +2498,6 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(Interim1xxStatusCode))]
         public async Task SendAsync_1xxResponsesWithHeaders_InterimResponsesHeadersIgnored(HttpStatusCode responseStatusCode)
         {
-            // Skip test on .NET Framework since it doesn't have the fix.
-            if (PlatformDetection.IsFullFramework && (int)responseStatusCode >= 102) return;
-
             var clientFinished = new TaskCompletionSource<bool>();
             const string TestString = "test";
             const string CookieHeaderExpected = "yummy_cookie=choco";
@@ -2615,9 +2564,6 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(Interim1xxStatusCode))]
         public async Task SendAsync_Unexpected1xxResponses_DropAllInterimResponses(HttpStatusCode responseStatusCode)
         {
-            // Skip test on .NET Framework since it doesn't have the fix.
-            if (PlatformDetection.IsFullFramework && (int)responseStatusCode >= 102) return;
-
             var clientFinished = new TaskCompletionSource<bool>();
             const string TestString = "test";
 
@@ -2942,13 +2888,6 @@ namespace System.Net.Http.Functional.Tests
             string method,
             bool secureServer)
         {
-            if (PlatformDetection.IsFullFramework && method == "GET")
-            {
-                // .NET Framework doesn't allow a content body with this HTTP verb.
-                // It will throw a System.Net.ProtocolViolation exception.
-                return;
-            }
-
             using (HttpClient client = CreateHttpClient())
             {
                 var request = new HttpRequestMessage(
@@ -3013,13 +2952,6 @@ namespace System.Net.Http.Functional.Tests
             string method,
             bool secureServer)
         {
-            if (PlatformDetection.IsFullFramework && method == "HEAD")
-            {
-                // .NET Framework doesn't allow a content body with this HTTP verb.
-                // It will throw a System.Net.ProtocolViolation exception.
-                return;
-            }
-
             if (PlatformDetection.IsUap && method == "TRACE")
             {
                 // UAP platform doesn't allow a content body with this HTTP verb.
@@ -3076,7 +3008,6 @@ namespace System.Net.Http.Functional.Tests
             Assert.Equal(new Version(1, 1), receivedRequestVersion);
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Throws exception sending request using Version(0,0)")]
         [OuterLoop] // TODO: Issue #11345
         [Fact]
         public async Task SendAsync_RequestVersionNotSpecified_ServerReceivesVersion11Request()
@@ -3094,7 +3025,6 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [ActiveIssue(23037, TestPlatforms.AnyUnix)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Specifying Version(2,0) throws exception on netfx")]
         [OuterLoop] // TODO: Issue #11345
         [Theory]
         [MemberData(nameof(Http2Servers))]
@@ -3153,7 +3083,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Specifying Version(2,0) throws exception on netfx")]
         [Fact]
         public async Task SendAsync_RequestVersion20_HttpNotHttps_NoUpgradeRequest()
         {
@@ -3170,7 +3099,6 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Specifying Version(2,0) throws exception on netfx")]
         [OuterLoop] // TODO: Issue #11345
         [ConditionalTheory(nameof(IsWindows10Version1607OrGreater)), MemberData(nameof(Http2NoPushServers))]
         public async Task SendAsync_RequestVersion20_ResponseVersion20(Uri server)

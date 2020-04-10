@@ -114,7 +114,6 @@ namespace System.Net.Http.Functional.Tests
 
         [OuterLoop] // TODO: Issue #11345
         [Theory, MemberData(nameof(EchoServers))]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "netfx behaves differently and will buffer content and use 'Content-Length' semantics")]
         public async Task PostUsingNoSpecifiedSemantics_UsesChunkedSemantics(Uri serverUri)
         {
             await PostHelper(serverUri, ExpectedContent, new StringContent(ExpectedContent),

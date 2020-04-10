@@ -237,7 +237,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [ActiveIssue(23702, TargetFrameworkMonikers.NetFramework)]
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsNanoServer))]
         public async Task ProxyAuth_Digest_Succeeds()
         {

@@ -16,14 +16,6 @@ namespace System.Net.Http.Functional.Tests
     {
         private static bool ClientSupportsDHECipherSuites => (!PlatformDetection.IsWindows || PlatformDetection.IsWindows10Version1607OrGreater);
 
-        [Fact]
-        public void SingletonReturnsTrue()
-        {
-            Assert.NotNull(HttpClientHandler.DangerousAcceptAnyServerCertificateValidator);
-            Assert.Same(HttpClientHandler.DangerousAcceptAnyServerCertificateValidator, HttpClientHandler.DangerousAcceptAnyServerCertificateValidator);
-            Assert.True(HttpClientHandler.DangerousAcceptAnyServerCertificateValidator(null, null, null, SslPolicyErrors.None));
-        }
-
         [Theory]
         [InlineData(SslProtocols.Tls, false)] // try various protocols to ensure we correctly set versions even when accepting all certs
         [InlineData(SslProtocols.Tls, true)]

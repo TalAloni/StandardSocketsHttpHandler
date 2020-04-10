@@ -428,13 +428,6 @@ namespace System.Net.Http.Functional.Tests
                 // Third request, contains Basic auth header but challenges anyway
                 headers = headers = await server.AcceptConnectionSendResponseAndCloseAsync(HttpStatusCode.Unauthorized, "WWW-Authenticate: Basic realm=\"hello\"\r\n");
                 Assert.Contains(headers, header => header.Contains("Authorization"));
-
-                if (IsNetfxHandler)
-                {
-                    // For some reason, netfx tries one more time.
-                    headers = headers = await server.AcceptConnectionSendResponseAndCloseAsync(HttpStatusCode.Unauthorized, "WWW-Authenticate: Basic realm=\"hello\"\r\n");
-                    Assert.Contains(headers, header => header.Contains("Authorization"));
-                }
             });
         }
 

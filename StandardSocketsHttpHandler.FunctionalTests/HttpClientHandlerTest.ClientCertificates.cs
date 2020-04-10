@@ -126,7 +126,6 @@ namespace System.Net.Http.Functional.Tests
 
         [OuterLoop] // TODO: Issue #11345
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Fails with \"Authentication failed\" error.")]
         public async Task AutomaticOrManual_DoesntFailRegardlessOfWhetherClientCertsAreAvailable()
         {
             if (!BackendSupportsCustomCertificateHandling) // can't use [Conditional*] right now as it's evaluated at the wrong time for SocketsHttpHandler

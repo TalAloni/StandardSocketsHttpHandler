@@ -20,7 +20,6 @@ namespace System.Net.Http.Functional.Tests
         private bool IsRetrySupported => !IsWinHttpHandler;
 
         [Fact]
-        [ActiveIssue(26770, TargetFrameworkMonikers.NetFramework)]
         public async Task GetAsync_RetryOnConnectionClosed_Success()
         {
             if (!IsRetrySupported)

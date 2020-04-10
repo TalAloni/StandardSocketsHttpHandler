@@ -108,7 +108,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "no exception throw on netfx")]
         [Theory]
         [InlineData(1, 2, true)]
         [InlineData(1, 127, true)]

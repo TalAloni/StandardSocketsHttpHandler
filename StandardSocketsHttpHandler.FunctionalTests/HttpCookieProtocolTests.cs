@@ -126,12 +126,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_AddCookieHeader_CookieHeaderSent()
         {
-            if (IsNetfxHandler)
-            {
-                // Netfx handler does not support custom cookie header
-                return;
-            }
-
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
                 StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
@@ -154,12 +148,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_AddMultipleCookieHeaders_CookiesSent()
         {
-            if (IsNetfxHandler)
-            {
-                // Netfx handler does not support custom cookie header
-                return;
-            }
-
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
                 StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
@@ -192,12 +180,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_SetCookieContainerAndCookieHeader_BothCookiesSent()
         {
-            if (IsNetfxHandler)
-            {
-                // Netfx handler does not support custom cookie header
-                return;
-            }
-
             if (IsCurlHandler)
             {
                 // Issue #26983
@@ -234,12 +216,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_SetCookieContainerAndMultipleCookieHeaders_BothCookiesSent()
         {
-            if (IsNetfxHandler)
-            {
-                // Netfx handler does not support custom cookie header
-                return;
-            }
-
             if (IsCurlHandler)
             {
                 // Issue #26983
@@ -451,12 +427,6 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_ReceiveInvalidSetCookieHeader_ValidCookiesAdded()
         {
-            if (IsNetfxHandler)
-            {
-                // NetfxHandler incorrectly only processes one valid cookie 
-                return;
-            }
-
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
                 StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
