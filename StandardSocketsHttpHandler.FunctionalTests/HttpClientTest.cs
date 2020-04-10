@@ -340,6 +340,8 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
+        // https://github.com/dotnet/runtime/issues/25789
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework disposes request content after send")]
         [Fact]
         public async Task SendAsync_RequestContentNotDisposed()
         {

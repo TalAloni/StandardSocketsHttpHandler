@@ -72,6 +72,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
+        [ActiveIssue(27629)] // https://github.com/dotnet/runtime/issues/27629
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "UAP won't send requests through a custom proxy")]
         [OuterLoop] // TODO: Issue #11345
         [Fact]
@@ -437,6 +438,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Backport issue")] // Not working on .NET Framework, probably related to HttpContent.CopyToAsync
         [OuterLoop] // TODO: Issue #11345
         [PlatformSpecific(TestPlatforms.Windows)] // CopyToAsync(Stream, TransportContext) isn't used on unix
         [Fact]

@@ -405,6 +405,9 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
+        // Note: There is a suggested fix to this issue (https://github.com/dotnet/corefx/pull/38211), 
+        // Unfortunetely the suggested fix will throw either TaskCanceledException or OperationCancelledException, so the exception is not consisdent.
+        [ActiveIssue(26340)] // https://github.com/dotnet/runtime/issues/26340
         [OuterLoop]
         [Fact]
         public async Task ConnectTimeout_TimesOutSSLAuth_Throws()

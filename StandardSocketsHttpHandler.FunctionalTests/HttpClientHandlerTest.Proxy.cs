@@ -24,6 +24,7 @@ namespace System.Net.Http.Functional.Tests
             _output = output;
         }
         
+        [Trait("Category", "WindowsAuthentication")]
         [OuterLoop("Uses external server")]
         [Theory]
         [InlineData(AuthenticationSchemes.Ntlm, true, false)]
