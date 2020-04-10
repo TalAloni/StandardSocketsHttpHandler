@@ -508,7 +508,7 @@ namespace System.Net.Http.Functional.Tests
                 await server.AcceptConnectionAsync(async connection =>
                 {
                     await connection.ReadRequestHeaderAsync();
-                    await connection.Reader.ReadAsync(new char[1]);
+                    await connection.Reader.ReadAsync(new char[1], 0, 1);
                     await connection.SendResponseAsync();
                 });
             });
@@ -635,13 +635,13 @@ namespace System.Net.Http.Functional.Tests
                             clientStream.Write(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2);
                             Assert.Equal("!", await connection.Reader.ReadLineAsync());
 
-                            clientStream.Write(new Span<byte>(new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)'\r', (byte)'\n' }));
+                            clientStream.Write(new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)'\r', (byte)'\n' }, 0, 7);
                             Assert.Equal("hello", await connection.Reader.ReadLineAsync());
 
                             await clientStream.WriteAsync(new byte[] { (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 7);
                             Assert.Equal("world", await connection.Reader.ReadLineAsync());
 
-                            await clientStream.WriteAsync(new Memory<byte>(new byte[] { (byte)'a', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 5));
+                            await clientStream.WriteAsync(new byte[] { (byte)'a', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 5);
                             Assert.Equal("and", await connection.Reader.ReadLineAsync());
 
                             await Task.Factory.FromAsync(clientStream.BeginWrite, clientStream.EndWrite, new byte[] { (byte)'b', (byte)'e', (byte)'y', (byte)'o', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 8, null);
@@ -651,7 +651,7 @@ namespace System.Net.Http.Functional.Tests
                             await clientStream.FlushAsync();
 
                             // Validate reading APIs on clientStream
-                            await connection.Stream.WriteAsync(Encoding.ASCII.GetBytes("abcdefghijklmnopqrstuvwxyz"));
+                            await connection.Stream.WriteAsync(Encoding.ASCII.GetBytes("abcdefghijklmnopqrstuvwxyz"), 0, 26);
                             var buffer = new byte[1];
 
                             Assert.Equal('a', clientStream.ReadByte());
@@ -659,7 +659,7 @@ namespace System.Net.Http.Functional.Tests
                             Assert.Equal(1, clientStream.Read(buffer, 0, 1));
                             Assert.Equal((byte)'b', buffer[0]);
 
-                            Assert.Equal(1, clientStream.Read(new Span<byte>(buffer, 0, 1)));
+                            Assert.Equal(1, clientStream.Read(buffer, 0, 1));
                             Assert.Equal((byte)'c', buffer[0]);
 
                             Assert.Equal(1, await clientStream.ReadAsync(buffer, 0, 1));
@@ -675,7 +675,7 @@ namespace System.Net.Http.Functional.Tests
                             Task copyTask = clientStream.CopyToAsync(ms);
 
                             string bigString = string.Concat(Enumerable.Repeat("abcdefghijklmnopqrstuvwxyz", 1000));
-                            Task lotsOfDataSent = connection.Socket.SendAsync(Encoding.ASCII.GetBytes(bigString), SocketFlags.None);
+                            Task lotsOfDataSent = connection.Socket.SendAsync(new ArraySegment<byte>(Encoding.ASCII.GetBytes(bigString)), SocketFlags.None);
                             connection.Socket.Shutdown(SocketShutdown.Send);
                             await copyTask;
                             await lotsOfDataSent;

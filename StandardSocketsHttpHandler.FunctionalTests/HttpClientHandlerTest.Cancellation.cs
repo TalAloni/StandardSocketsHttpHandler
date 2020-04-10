@@ -412,7 +412,7 @@ namespace System.Net.Http.Functional.Tests
                 var buffer = new byte[1] { 42 };
                 for (int i = 0; i < _length; i++)
                 {
-                    await stream.WriteAsync(buffer);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
                     await stream.FlushAsync();
                     await Task.Delay(1);
                 }
