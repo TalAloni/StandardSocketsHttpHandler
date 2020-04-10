@@ -33,7 +33,7 @@ namespace System.Net.Http
             }
         }
 
-        private long CreationTickCount { get; } = Environment.TickCount64;
+        private long CreationTickCount { get; } = DateTime.UtcNow.Ticks;
 
         // Check if lifetime expired on connection.
         public bool LifetimeExpired(long nowTicks, TimeSpan lifetime)

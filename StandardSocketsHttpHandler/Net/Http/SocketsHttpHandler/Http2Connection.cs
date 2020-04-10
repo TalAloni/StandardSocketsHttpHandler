@@ -1370,7 +1370,7 @@ namespace System.Net.Http
         }
 
         /// <summary>Gets whether the connection exceeded any of the connection limits.</summary>
-        /// <param name="nowTicks">The current tick count.  Passed in to amortize the cost of calling Environment.TickCount64.</param>
+        /// <param name="nowTicks">The current tick count.  Passed in to amortize the cost of calling DateTime.UtcNow.Ticks.</param>
         /// <param name="connectionLifetime">How long a connection can be open to be considered reusable.</param>
         /// <param name="connectionIdleTimeout">How long a connection can have been idle in the pool to be considered reusable.</param>
         /// <returns>
@@ -1766,7 +1766,7 @@ namespace System.Net.Http
                 if (_httpStreams.Count == 0)
                 {
                     // If this was last pending request, get timestamp so we can monitor idle time.
-                    _idleSinceTickCount = Environment.TickCount64;
+                    _idleSinceTickCount = DateTime.UtcNow.Ticks;
                 }
 
                 if (_disposed || _lastStreamId != -1)
