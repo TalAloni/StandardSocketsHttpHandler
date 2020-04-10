@@ -27,16 +27,6 @@ namespace System.Net.Http.Headers
             _mediaTypeCreator = mediaTypeCreator;
         }
 
-        protected override int GetParsedValueLength(string value, int startIndex, object storeValue,
-            out object parsedValue)
-        {
-            MediaTypeHeaderValue temp = null;
-            int resultLength = MediaTypeHeaderValue.GetMediaTypeLength(value, startIndex, _mediaTypeCreator, out temp);
-
-            parsedValue = temp;
-            return resultLength;
-        }
-
         private static MediaTypeHeaderValue CreateMediaType()
         {
             return new MediaTypeHeaderValue();
