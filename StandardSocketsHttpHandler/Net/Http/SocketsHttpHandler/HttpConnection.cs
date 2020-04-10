@@ -342,7 +342,7 @@ namespace System.Net.Http
             Debug.Assert(RemainingBuffer.Length == 0, "Unexpected data in read buffer");
 
             _currentRequest = request;
-            HttpMethod normalizedMethod = HttpMethod.Normalize(request.Method);
+            HttpMethod normalizedMethod = HttpMethodUtils.Normalize(request.Method);
 
             Debug.Assert(!_canRetry);
             _canRetry = true;
@@ -356,7 +356,7 @@ namespace System.Net.Http
                 await WriteStringAsync(normalizedMethod.Method).ConfigureAwait(false);
                 await WriteByteAsync((byte)' ').ConfigureAwait(false);
 
-                if (ReferenceEquals(normalizedMethod, HttpMethod.Connect))
+                if (ReferenceEquals(normalizedMethod, HttpMethodUtils.Connect))
                 {
                     // RFC 7231 #section-4.3.6.
                     // Write only CONNECT foo.com:345 HTTP/1.1
@@ -623,7 +623,7 @@ namespace System.Net.Http
                     responseStream = EmptyReadStream.Instance;
                     CompleteResponse();
                 }
-                else if (ReferenceEquals(normalizedMethod, HttpMethod.Connect) && response.StatusCode == HttpStatusCode.OK)
+                else if (ReferenceEquals(normalizedMethod, HttpMethodUtils.Connect) && response.StatusCode == HttpStatusCode.OK)
                 {
                     // Successful response to CONNECT does not have body.
                     // What ever comes next should be opaque.

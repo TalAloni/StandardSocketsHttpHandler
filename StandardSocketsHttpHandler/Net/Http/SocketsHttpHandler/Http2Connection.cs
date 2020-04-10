@@ -1016,7 +1016,7 @@ namespace System.Net.Http
             // HTTP2 does not support Transfer-Encoding: chunked, so disable this on the request.
             request.Headers.TransferEncodingChunked = false;
 
-            HttpMethod normalizedMethod = HttpMethod.Normalize(request.Method);
+            HttpMethod normalizedMethod = HttpMethodUtils.Normalize(request.Method);
 
             // Method is normalized so we can do reference equality here.
             if (ReferenceEquals(normalizedMethod, HttpMethod.Get))
