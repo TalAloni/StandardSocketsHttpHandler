@@ -60,8 +60,6 @@ namespace System.Net.Http
         internal sealed override Stream TryCreateContentReadStream() =>
             ConsumeStream();
 
-        internal override bool AllowDuplex => false;
-
         protected sealed override void Dispose(bool disposing)
         {
             if (disposing)

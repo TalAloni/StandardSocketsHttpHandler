@@ -1657,7 +1657,7 @@ namespace System.Net.Http
                 bool shouldExpectContinue = request.Content != null && request.HasHeaders() && request.Headers.ExpectContinue == true;
                 Http2Stream http2Stream = await SendHeadersAsync(request, cancellationToken, mustFlush: shouldExpectContinue).ConfigureAwait(false);
 
-                bool duplex = request.Content != null && request.Content.AllowDuplex;
+                bool duplex = false;
 
                 // If we have duplex content, then don't propagate the cancellation to the request body task.
                 // If cancellation occurs before we receive the response headers, then we will cancel the request body anyway.
