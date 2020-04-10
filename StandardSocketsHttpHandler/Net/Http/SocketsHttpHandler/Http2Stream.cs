@@ -835,6 +835,7 @@ namespace System.Net.Http
                 {
                     responseContent.SetStream(new Http2ReadStream(this));
                 }
+                responseContent.SetDefaultCancellationToken(cancellationToken);
 
                 // Process Set-Cookie headers.
                 if (_connection._pool.Settings._useCookies)

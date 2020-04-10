@@ -659,6 +659,7 @@ namespace System.Net.Http
                     responseStream = new ConnectionCloseReadStream(this);
                 }
                 ((HttpConnectionResponseContent)response.Content).SetStream(responseStream);
+                ((HttpConnectionResponseContent)response.Content).SetDefaultCancellationToken(cancellationToken);
 
                 if (NetEventSource.IsEnabled) Trace($"Received response: {response}");
 
