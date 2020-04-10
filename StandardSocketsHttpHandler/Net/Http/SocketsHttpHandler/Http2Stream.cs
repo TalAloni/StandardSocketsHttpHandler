@@ -1052,7 +1052,7 @@ namespace System.Net.Http
 
             private async Task GetCancelableWaiterTask(CancellationToken cancellationToken)
             {
-                using (cancellationToken.UnsafeRegister(s =>
+                using (cancellationToken.Register(s =>
                 {
                     var thisRef = (Http2Stream)s;
 
