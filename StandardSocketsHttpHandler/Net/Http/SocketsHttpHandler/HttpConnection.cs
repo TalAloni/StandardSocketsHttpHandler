@@ -360,7 +360,7 @@ namespace System.Net.Http
                 {
                     // RFC 7231 #section-4.3.6.
                     // Write only CONNECT foo.com:345 HTTP/1.1
-                    if (!request.HasHeaders || request.Headers.Host == null)
+                    if (!request.HasHeaders() || request.Headers.Host == null)
                     {
                         throw new HttpRequestException(SR.net_http_request_no_host);
                     }
@@ -414,13 +414,13 @@ namespace System.Net.Http
 
                 // Write special additional headers.  If a host isn't in the headers list, then a Host header
                 // wasn't sent, so as it's required by HTTP 1.1 spec, send one based on the Request Uri.
-                if (!request.HasHeaders || request.Headers.Host == null)
+                if (!request.HasHeaders() || request.Headers.Host == null)
                 {
                     await WriteHostHeaderAsync(request.RequestUri).ConfigureAwait(false);
                 }
 
                 // Write request headers
-                if (request.HasHeaders || cookiesFromContainer != null)
+                if (request.HasHeaders() || cookiesFromContainer != null)
                 {
                     await WriteHeadersAsync(request.Headers, cookiesFromContainer).ConfigureAwait(false);
                 }
@@ -450,7 +450,7 @@ namespace System.Net.Http
                 }
                 else
                 {
-                    bool hasExpectContinueHeader = request.HasHeaders && request.Headers.ExpectContinue == true;
+                    bool hasExpectContinueHeader = request.HasHeaders() && request.Headers.ExpectContinue == true;
                     if (NetEventSource.IsEnabled) Trace($"Request content is not null, start processing it. hasExpectContinueHeader = {hasExpectContinueHeader}");
 
                     // Send the body if there is one.  We prefer to serialize the sending of the content before
@@ -737,7 +737,7 @@ namespace System.Net.Http
 
         private HttpContentWriteStream CreateRequestContentStream(HttpRequestMessage request)
         {
-            bool requestTransferEncodingChunked = request.HasHeaders && request.Headers.TransferEncodingChunked == true;
+            bool requestTransferEncodingChunked = request.HasHeaders() && request.Headers.TransferEncodingChunked == true;
             HttpContentWriteStream requestContentStream = requestTransferEncodingChunked ? (HttpContentWriteStream)
                 new ChunkedEncodingWriteStream(this) :
                 new ContentLengthWriteStream(this);

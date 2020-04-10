@@ -633,7 +633,7 @@ namespace System.Net.Http
                     case HttpConnectionKind.ProxyTunnel:
                     case HttpConnectionKind.SslProxyTunnel:
                         HttpResponseMessage response;
-                        (stream, response) = await EstablishProxyTunnel(request.HasHeaders ? request.Headers : null, cancellationToken).ConfigureAwait(false);
+                        (stream, response) = await EstablishProxyTunnel(request.HasHeaders() ? request.Headers : null, cancellationToken).ConfigureAwait(false);
                         if (response != null)
                         {
                             // Return non-success response from proxy.

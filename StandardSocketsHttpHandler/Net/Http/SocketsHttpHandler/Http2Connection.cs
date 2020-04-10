@@ -1034,7 +1034,7 @@ namespace System.Net.Http
 
             WriteIndexedHeader(_stream is SslStream ? StaticTable.SchemeHttps : StaticTable.SchemeHttp);
 
-            if (request.HasHeaders && request.Headers.Host != null)
+            if (request.HasHeaders() && request.Headers.Host != null)
             {
                 WriteIndexedHeader(StaticTable.Authority, request.Headers.Host);
             }
@@ -1053,7 +1053,7 @@ namespace System.Net.Http
                 WriteIndexedHeader(StaticTable.PathSlash, pathAndQuery);
             }
 
-            if (request.HasHeaders)
+            if (request.HasHeaders())
             {
                 WriteHeaderCollection(request.Headers);
             }
@@ -1654,7 +1654,7 @@ namespace System.Net.Http
             try
             {
                 // Send request headers
-                bool shouldExpectContinue = request.Content != null && request.HasHeaders && request.Headers.ExpectContinue == true;
+                bool shouldExpectContinue = request.Content != null && request.HasHeaders() && request.Headers.ExpectContinue == true;
                 Http2Stream http2Stream = await SendHeadersAsync(request, cancellationToken, mustFlush: shouldExpectContinue).ConfigureAwait(false);
 
                 bool duplex = request.Content != null && request.Content.AllowDuplex;

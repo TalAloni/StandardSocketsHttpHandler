@@ -353,7 +353,7 @@ namespace System.Net.Http
             }
 
             // Add headers to define content transfer, if not present
-            if (request.HasHeaders && request.Headers.TransferEncodingChunked.GetValueOrDefault())
+            if (request.HasHeaders() && request.Headers.TransferEncodingChunked.GetValueOrDefault())
             {
                 if (request.Content == null)
                 {
@@ -371,7 +371,7 @@ namespace System.Net.Http
                 request.Headers.TransferEncodingChunked = true;
             }
 
-            if (request.Version.Minor == 0 && request.Version.Major == 1 && request.HasHeaders)
+            if (request.Version.Minor == 0 && request.Version.Major == 1 && request.HasHeaders())
             {
                 // HTTP 1.0 does not support chunking
                 if (request.Headers.TransferEncodingChunked == true)

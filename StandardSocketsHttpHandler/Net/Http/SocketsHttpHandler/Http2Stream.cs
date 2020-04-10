@@ -122,7 +122,7 @@ namespace System.Net.Http
                     // for either disposal or issuing cancellation).
                     _requestBodyCancellationSource = new CancellationTokenSource();
 
-                    if (_request.HasHeaders && _request.Headers.ExpectContinue == true)
+                    if (_request.HasHeaders() && _request.Headers.ExpectContinue == true)
                     {
                         // Create a TCS for handling Expect: 100-continue semantics. See WaitFor100ContinueAsync.
                         // Note we need to create this in the constructor, because we can receive a 100 Continue response at any time after the constructor finishes.
