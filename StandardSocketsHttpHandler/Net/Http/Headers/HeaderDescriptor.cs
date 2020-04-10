@@ -4,7 +4,6 @@
 
 using System.Buffers;
 using System.Diagnostics;
-using System.Text.Unicode;
 
 namespace System.Net.Http.Headers
 {
@@ -134,7 +133,7 @@ namespace System.Net.Http.Headers
 
             try
             {
-                if (Utf8.ToUtf16(input, rented, out _, out int charsWritten, replaceInvalidSequences: false) == OperationStatus.Done)
+                if (Utf8Utils.ToUtf16(input, rented, out _, out int charsWritten) == OperationStatus.Done)
                 {
                     decoded = new string(rented, 0, charsWritten);
                     return true;
