@@ -172,7 +172,11 @@ namespace System.Net.Http
                 Debug.Assert(_readAheadTask == null || _socket == null, "Should only already have a read-ahead task if we don't have a socket to poll");
                 if (_readAheadTask == null)
                 {
+#if NETSTANDARD20
+                    _readAheadTask = new ValueTask<int>(_stream.ReadAsync(new Memory<byte>(_readBuffer)));
+#else
                     _readAheadTask = _stream.ReadAsync(new Memory<byte>(_readBuffer));
+#endif
                 }
             }
             catch (Exception error)
@@ -1230,7 +1234,11 @@ namespace System.Net.Http
         private ValueTask WriteToStreamAsync(ReadOnlyMemory<byte> source)
         {
             if (NetEventSource.IsEnabled) Trace($"Writing {source.Length} bytes.");
+#if NETSTANDARD20
+            return new ValueTask(_stream.WriteAsync(source));
+#else
             return _stream.WriteAsync(source);
+#endif
         }
 
         private bool TryReadNextLine(out ReadOnlySpan<byte> line)
