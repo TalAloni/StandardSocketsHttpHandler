@@ -110,7 +110,7 @@ namespace System.Net.Http
                 }
 
                 // Try to consume from data we already have in the buffer.
-                int bytesRead = ReadChunksFromConnectionBuffer(buffer.Span, cancellationRegistration: default);
+                int bytesRead = ReadChunksFromConnectionBuffer(buffer.Span, cancellationRegistration: default, cancellationToken);
                 if (bytesRead > 0)
                 {
                     return new ValueTask<int>(bytesRead);
@@ -173,7 +173,7 @@ namespace System.Net.Http
 
                         // Now that we have more, see if we can get any response data, and if
                         // we can we're done.
-                        int bytesCopied = ReadChunksFromConnectionBuffer(buffer.Span, ctr);
+                        int bytesCopied = ReadChunksFromConnectionBuffer(buffer.Span, ctr, cancellationToken);
                         if (bytesCopied > 0)
                         {
                             return bytesCopied;
@@ -236,12 +236,12 @@ namespace System.Net.Http
                 }
             }
 
-            private int ReadChunksFromConnectionBuffer(Span<byte> buffer, CancellationTokenRegistration cancellationRegistration)
+            private int ReadChunksFromConnectionBuffer(Span<byte> buffer, CancellationTokenRegistration cancellationRegistration, CancellationToken cancellationToken = default)
             {
                 int totalBytesRead = 0;
                 while (buffer.Length > 0)
                 {
-                    ReadOnlyMemory<byte> bytesRead = ReadChunkFromConnectionBuffer(buffer.Length, cancellationRegistration);
+                    ReadOnlyMemory<byte> bytesRead = ReadChunkFromConnectionBuffer(buffer.Length, cancellationRegistration, cancellationToken);
                     Debug.Assert(bytesRead.Length <= buffer.Length);
                     if (bytesRead.Length == 0)
                     {
@@ -255,7 +255,7 @@ namespace System.Net.Http
                 return totalBytesRead;
             }
 
-            private ReadOnlyMemory<byte> ReadChunkFromConnectionBuffer(int maxBytesToRead, CancellationTokenRegistration cancellationRegistration)
+            private ReadOnlyMemory<byte> ReadChunkFromConnectionBuffer(int maxBytesToRead, CancellationTokenRegistration cancellationRegistration, CancellationToken cancellationToken = default)
             {
                 Debug.Assert(maxBytesToRead > 0);
 
@@ -361,7 +361,7 @@ namespace System.Net.Http
                                     // (e.g. if a timer is used and has already queued its callback but the
                                     // callback hasn't yet run).
                                     cancellationRegistration.Dispose();
-                                    CancellationHelper.ThrowIfCancellationRequested(cancellationRegistration.Token);
+                                    CancellationHelper.ThrowIfCancellationRequested(cancellationToken);
 
                                     _state = ParsingState.Done;
                                     _connection.CompleteResponse();
