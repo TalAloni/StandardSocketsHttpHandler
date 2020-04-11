@@ -232,7 +232,10 @@ namespace System.Net.Http
                             // (e.g. if a timer is used and has already queued its callback but the
                             // callback hasn't yet run).
                             ctr.Dispose();
-                            CancellationHelper.ThrowIfCancellationRequested(ctr.Token);
+                            if (cts != null)
+                            {
+                                CancellationHelper.ThrowIfCancellationRequested(cts.Token);
+                            }
 
                             Finish();
                             return true;
