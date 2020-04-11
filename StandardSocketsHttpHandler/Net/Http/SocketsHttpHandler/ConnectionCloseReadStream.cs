@@ -84,7 +84,7 @@ namespace System.Net.Http
                 }
 
                 Task copyTask = _connection.CopyToUntilEofAsync(destination, bufferSize, cancellationToken);
-                if (copyTask.IsCompletedSuccessfully)
+                if (copyTask.IsCompletedSuccessfully())
                 {
                     Finish();
                     return Task.CompletedTask;
