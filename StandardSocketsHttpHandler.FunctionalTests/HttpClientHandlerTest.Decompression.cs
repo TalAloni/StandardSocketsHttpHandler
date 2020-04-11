@@ -37,13 +37,21 @@ namespace System.Net.Http.Functional.Tests
                 {
                     "deflate",
                     new Func<Stream, Stream>(s => new DeflateStream(s, CompressionLevel.Optimal, leaveOpen: true)),
+#if NET472
+                    specifyAllMethods ? DecompressionMethods.Deflate : (DecompressionMethods.GZip | DecompressionMethods.Deflate)
+#else
                     specifyAllMethods ? DecompressionMethods.Deflate : DecompressionMethods.All
+#endif
                 };
                 yield return new object[]
                 {
                     "gzip",
                     new Func<Stream, Stream>(s => new GZipStream(s, CompressionLevel.Optimal, leaveOpen: true)),
+#if NET472
+                    specifyAllMethods ? DecompressionMethods.GZip : (DecompressionMethods.GZip | DecompressionMethods.Deflate)
+#else
                     specifyAllMethods ? DecompressionMethods.GZip : DecompressionMethods.All
+#endif
                 };
 #if BROTLI
                 yield return new object[]
