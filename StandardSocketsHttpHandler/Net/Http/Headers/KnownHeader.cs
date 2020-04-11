@@ -34,8 +34,7 @@ namespace System.Net.Http.Headers
                 HPackEncoder.EncodeLiteralHeaderFieldWithoutIndexingNewNameToAllocatedArray(name);
 
             var asciiBytesWithColonSpace = new byte[name.Length + 2]; // + 2 for ':' and ' '
-            int asciiBytes = Encoding.ASCII.GetBytes(name, asciiBytesWithColonSpace);
-            Debug.Assert(asciiBytes == name.Length);
+            Array.Copy(Encoding.ASCII.GetBytes(name), asciiBytesWithColonSpace, name.Length);
             asciiBytesWithColonSpace[asciiBytesWithColonSpace.Length - 2] = (byte)':';
             asciiBytesWithColonSpace[asciiBytesWithColonSpace.Length - 1] = (byte)' ';
             AsciiBytesWithColonSpace = asciiBytesWithColonSpace;
