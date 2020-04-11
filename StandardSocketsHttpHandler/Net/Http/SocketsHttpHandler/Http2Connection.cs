@@ -788,7 +788,7 @@ namespace System.Net.Http
         private async Task AcquireWriteLockAsync(CancellationToken cancellationToken)
         {
             Task acquireLockTask = _writerLock.WaitAsync(cancellationToken);
-            if (!acquireLockTask.IsCompletedSuccessfully)
+            if (!acquireLockTask.IsCompletedSuccessfully())
             {
                 Interlocked.Increment(ref _pendingWriters);
 

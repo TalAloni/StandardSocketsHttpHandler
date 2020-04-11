@@ -133,7 +133,7 @@ namespace System.Net.Http
                 }
 
                 Task copyTask = _connection.CopyToContentLengthAsync(destination, _contentBytesRemaining, bufferSize, cancellationToken);
-                if (copyTask.IsCompletedSuccessfully)
+                if (copyTask.IsCompletedSuccessfully())
                 {
                     Finish();
                     return Task.CompletedTask;

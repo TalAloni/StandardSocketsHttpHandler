@@ -688,7 +688,7 @@ namespace System.Net.Http
                 // (we're about to Dispose for the connection). In such cases, we don't want any
                 // exception in that sending task to become unobserved and raise alarm bells, so we
                 // hook up a continuation that will log it.
-                if (sendRequestContentTask != null && !sendRequestContentTask.IsCompletedSuccessfully)
+                if (sendRequestContentTask != null && !sendRequestContentTask.IsCompletedSuccessfully())
                 {
                     LogExceptions(sendRequestContentTask);
                 }
