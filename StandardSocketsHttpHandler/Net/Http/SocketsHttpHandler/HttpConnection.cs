@@ -866,7 +866,7 @@ namespace System.Net.Http
                 {
                     try
                     {
-                        response.ReasonPhrase = HttpRuleParser.DefaultHttpEncoding.GetString(reasonBytes.ToArray());
+                        response.ReasonPhrase = HttpRuleParser.DefaultHttpEncoding.GetString(reasonBytes.ToArray(), 0, reasonBytes.Length);
                     }
                     catch (FormatException error)
                     {

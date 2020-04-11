@@ -94,7 +94,7 @@ namespace System.Net.Security
                     return null;
                 }
 
-                return s_utf8.GetString(_readOnlyProtocol.Span.ToArray());
+                return s_utf8.GetString(_readOnlyProtocol.Span.ToArray(), 0, _readOnlyProtocol.Length);
             }
             catch
             {
