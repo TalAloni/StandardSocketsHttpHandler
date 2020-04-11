@@ -18,6 +18,18 @@ namespace Microsoft.DotNet.XUnitExtensions
             _conditionCache = new Dictionary<IMethodInfo, string>();
         }
 
+        public override IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo theoryAttribute)
+        {
+            List<IXunitTestCase> result = new List<IXunitTestCase>(base.Discover(discoveryOptions, testMethod, theoryAttribute));
+            if (result.First() is ExecutionErrorTestCase &&
+                (result.First() as ExecutionErrorTestCase).ErrorMessage.StartsWith("No data found"))
+            {
+                return new[] { new SkippedTestCase("No data found", DiagnosticMessageSink, discoveryOptions.MethodDisplayOrDefault(), discoveryOptions.MethodDisplayOptionsOrDefault(), testMethod) };
+            }
+
+            return result;
+        }
+
         protected override IEnumerable<IXunitTestCase> CreateTestCasesForTheory(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo theoryAttribute)
         {
             if (ConditionalTestDiscoverer.TryEvaluateSkipConditions(discoveryOptions, DiagnosticMessageSink, testMethod, theoryAttribute.GetConstructorArguments().ToArray(), out string skipReason, out ExecutionErrorTestCase errorTestCase))
