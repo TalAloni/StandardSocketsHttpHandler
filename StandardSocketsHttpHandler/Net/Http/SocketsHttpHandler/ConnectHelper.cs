@@ -138,7 +138,7 @@ namespace System.Net.Http
 
         private static async ValueTask<SslStream> EstablishSslConnectionAsyncCore(Stream stream, SslClientAuthenticationOptions sslOptions, CancellationToken cancellationToken)
         {
-            SslStream sslStream = new SslStream(stream);
+            SslStream sslStream = new SslStream(stream, false, sslOptions.RemoteCertificateValidationCallback, sslOptions.LocalCertificateSelectionCallback, sslOptions.EncryptionPolicy);
 
             try
             {
