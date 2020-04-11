@@ -43,15 +43,15 @@ https://raw.githubusercontent.com/Cyan4973/xxHash/5c174cfa4e45a42f94082dc0d4539b
 
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 namespace System
 {
     // xxHash32 is used for the hash code.
     // https://github.com/Cyan4973/xxHash
 
-    public struct HashCode
+    internal struct HashCode
     {
         private static readonly uint s_seed = GenerateGlobalSeed();
 
@@ -63,8 +63,9 @@ namespace System
 
         private static unsafe uint GenerateGlobalSeed()
         {
-            uint result;
-            Interop.GetRandomBytes((byte*)&result, sizeof(uint));
+            byte[] random = new byte[4];
+            RandomNumberGenerator.Create().GetBytes(random);
+            uint result = BitConverter.ToUInt32(random, 0);
             return result;
         }
 
