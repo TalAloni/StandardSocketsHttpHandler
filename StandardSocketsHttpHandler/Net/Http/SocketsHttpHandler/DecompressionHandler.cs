@@ -35,7 +35,9 @@ namespace System.Net.Http
 
         internal bool GZipEnabled => (_decompressionMethods & DecompressionMethods.GZip) != 0;
         internal bool DeflateEnabled => (_decompressionMethods & DecompressionMethods.Deflate) != 0;
-        internal bool BrotliEnabled => (_decompressionMethods & DecompressionMethods.Brotli) != 0;
+#if BROTLI
+        internal bool BrotliEnabled => (_decompressionMethods & (DecompressionMethods)4) != 0;
+#endif
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -49,10 +51,12 @@ namespace System.Net.Http
                 request.Headers.AcceptEncoding.Add(s_deflateHeaderValue);
             }
 
+#if BROTLI
             if (BrotliEnabled && !request.Headers.AcceptEncoding.Contains(s_brotliHeaderValue))
             {
                 request.Headers.AcceptEncoding.Add(s_brotliHeaderValue);
             }
+#endif
 
             HttpResponseMessage response = await _innerHandler.SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
 
@@ -73,10 +77,12 @@ namespace System.Net.Http
                 {
                     response.Content = new DeflateDecompressedContent(response.Content);
                 }
+#if BROTLI
                 else if (BrotliEnabled && last == s_brotli)
                 {
                     response.Content = new BrotliDecompressedContent(response.Content);
                 }
+#endif
             }
 
             return response;
@@ -183,6 +189,7 @@ namespace System.Net.Http
                 new DeflateStream(originalStream, CompressionMode.Decompress);
         }
 
+#if BROTLI
         private sealed class BrotliDecompressedContent : DecompressedContent
         {
             public BrotliDecompressedContent(HttpContent originalContent) :
@@ -193,5 +200,6 @@ namespace System.Net.Http
             protected override Stream GetDecompressedStream(Stream originalStream) =>
                 new BrotliStream(originalStream, CompressionMode.Decompress);
         }
+#endif
     }
 }
