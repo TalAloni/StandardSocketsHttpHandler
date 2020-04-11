@@ -21,7 +21,10 @@ namespace System.Net.Http
             {
                 Trace(
                     $"{this}. " +
-                    $"SslProtocol:{sslStream.SslProtocol}, NegotiatedApplicationProtocol:{sslStream.NegotiatedApplicationProtocol}, " +
+                    $"SslProtocol:{sslStream.SslProtocol}, " +
+#if !NETSTANDARD20
+                    $"NegotiatedApplicationProtocol:{sslStream.NegotiatedApplicationProtocol}, " +
+#endif
                     $"CipherAlgorithm:{sslStream.CipherAlgorithm}, CipherStrength:{sslStream.CipherStrength}, " +
                     $"HashAlgorithm:{sslStream.HashAlgorithm}, HashStrength:{sslStream.HashStrength}, " +
                     $"KeyExchangeAlgorithm:{sslStream.KeyExchangeAlgorithm}, KeyExchangeStrength:{sslStream.KeyExchangeStrength}, " +
