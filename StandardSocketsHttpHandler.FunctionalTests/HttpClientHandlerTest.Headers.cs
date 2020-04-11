@@ -249,11 +249,12 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
+        [ActiveIssue(23992)]
         [OuterLoop("Uses external server")]
         [Fact]
         public async Task SendAsync_GetWithInvalidHostHeader_ThrowsException()
         {
-            if (PlatformDetection.IsNetCore && (!UseSocketsHttpHandler || LoopbackServerFactory.IsHttp2))
+            if (PlatformDetection.IsNetCore && (!UseSocketsHttpHandler || UseHttp2))
             {
                 // Only .NET Framework and SocketsHttpHandler with HTTP/1.x use the Host header to influence the SSL auth.
                 // Host header is not used for HTTP2

@@ -20,6 +20,8 @@ namespace System.Net.Http.Functional.Tests
     [SkipOnTargetFramework(TargetFrameworkMonikers.Uap, "SslProtocols not supported on UAP")]
     public abstract partial class HttpClientHandler_SslProtocols_Test : HttpClientHandlerTestBase
     {
+        private static bool IsWindows10Version1607OrGreater => PlatformDetection.IsWindows10Version1607OrGreater;
+
         public HttpClientHandler_SslProtocols_Test(ITestOutputHelper output) : base(output) { }
 
         [Fact]
@@ -54,27 +56,28 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        [Fact]
-        public async Task SetProtocols_AfterRequest_ThrowsException()
-        {
-            if (!BackendSupportsSslConfiguration)
-            {
-                return;
-            }
-
-            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
-            using (HttpClient client = CreateHttpClient(handler))
-            {
-                handler.SslOptions.RemoteCertificateValidationCallback = SecurityHelper.AllowAllCertificates;
-                await LoopbackServer.CreateServerAsync(async (server, url) =>
-                {
-                    await TestHelper.WhenAllCompletedOrAnyFailed(
-                        server.AcceptConnectionSendResponseAndCloseAsync(),
-                        client.GetAsync(url));
-                });
-                Assert.Throws<InvalidOperationException>(() => handler.SslOptions.EnabledSslProtocols = SslProtocols.Tls12);
-            }
-        }
+        // It is HttpClientHandler that wraps SocketsHttpHandler that throws this exception 
+        //[Fact]
+        //public async Task SetProtocols_AfterRequest_ThrowsException()
+        //{
+        //    if (!BackendSupportsSslConfiguration)
+        //    {
+        //        return;
+        //    }
+        //
+        //    using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
+        //    using (HttpClient client = CreateHttpClient(handler))
+        //    {
+        //        handler.SslOptions.RemoteCertificateValidationCallback = SecurityHelper.AllowAllCertificates;
+        //        await LoopbackServer.CreateServerAsync(async (server, url) =>
+        //        {
+        //            await TestHelper.WhenAllCompletedOrAnyFailed(
+        //                server.AcceptConnectionSendResponseAndCloseAsync(),
+        //                client.GetAsync(url));
+        //        });
+        //        Assert.Throws<InvalidOperationException>(() => handler.SslOptions.EnabledSslProtocols = SslProtocols.Tls12);
+        //    }
+        //}
 
 
         public static IEnumerable<object[]> GetAsync_AllowedSSLVersion_Succeeds_MemberData()
@@ -219,7 +222,7 @@ namespace System.Net.Http.Functional.Tests
         // We have tests that validate with SslStream, but that's limited by what the current OS supports.
         // This tests provides additional validation against an external server.
         [OuterLoop("Avoid www.ssllabs.com dependency in innerloop.")]
-        [Theory]
+        [ConditionalTheory(nameof(IsWindows10Version1607OrGreater))]
         [MemberData(nameof(NotSupportedSSLVersionServers))]
         public async Task GetAsync_UnsupportedSSLVersion_Throws(SslProtocols sslProtocols, string url)
         {

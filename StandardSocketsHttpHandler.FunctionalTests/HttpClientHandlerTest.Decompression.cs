@@ -45,12 +45,14 @@ namespace System.Net.Http.Functional.Tests
                     new Func<Stream, Stream>(s => new GZipStream(s, CompressionLevel.Optimal, leaveOpen: true)),
                     specifyAllMethods ? DecompressionMethods.GZip : DecompressionMethods.All
                 };
+#if BROTLI
                 yield return new object[]
                 {
                     "br",
                     new Func<Stream, Stream>(s => new BrotliStream(s, CompressionLevel.Optimal, leaveOpen: true)),
                     specifyAllMethods ? DecompressionMethods.Brotli : DecompressionMethods.All
                 };
+#endif
             }
         }
 

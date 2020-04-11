@@ -64,14 +64,15 @@ namespace System.Net.Http.Functional.Tests
         {
         }
 
-        [Fact]
-        public void CookieContainer_SetNull_ThrowsArgumentNullException()
-        {
-            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
-            {
-                Assert.Throws<ArgumentNullException>(() => handler.CookieContainer = null);
-            }
-        }
+        // It is HttpClientHandler that wraps SocketsHttpHandler that throws this exception 
+        //[Fact]
+        //public void CookieContainer_SetNull_ThrowsArgumentNullException()
+        //{
+        //    using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
+        //    {
+        //        Assert.Throws<ArgumentNullException>(() => handler.CookieContainer = null);
+        //    }
+        //}
 
         [Fact]
         public void Ctor_ExpectedDefaultPropertyValues_CommonPlatform()
