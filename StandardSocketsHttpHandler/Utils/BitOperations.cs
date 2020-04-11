@@ -20,5 +20,8 @@ namespace System
             value += value >> 16;
             return numberOfBits - (int)(value & 0x0000003f); //subtract # of 1s from 32
         }
+
+        public static uint RotateLeft(uint value, int offset)
+            => (value << offset) | (value >> (32 - offset));
     }
 }
