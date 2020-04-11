@@ -25,7 +25,11 @@ namespace System.Net.Http
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> that triggered the cancellation.</param>
         /// <returns>The cancellation exception.</returns>
         internal static Exception CreateOperationCanceledException(Exception innerException, CancellationToken cancellationToken) =>
+#if NETSTANDARD20
+            new TaskCanceledException(s_cancellationMessage, innerException); // TCE for compatibility with other handlers that use TaskCompletionSource.TrySetCanceled()
+#else
             new TaskCanceledException(s_cancellationMessage, innerException, cancellationToken); // TCE for compatibility with other handlers that use TaskCompletionSource.TrySetCanceled()
+#endif
 
         /// <summary>Throws a cancellation exception.</summary>
         /// <param name="innerException">The inner exception to wrap. May be null.</param>
