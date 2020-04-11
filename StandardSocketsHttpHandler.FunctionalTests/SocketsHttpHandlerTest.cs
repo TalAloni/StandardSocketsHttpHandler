@@ -553,6 +553,7 @@ namespace System.Net.Http.Functional.Tests
         public SocketsHttpHandler_Http1_TrailingHeaders_Test(ITestOutputHelper output) : base(output) { }
         protected override bool UseSocketsHttpHandler => true;
 
+#if !NET472
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
@@ -758,6 +759,7 @@ namespace System.Net.Http.Functional.Tests
                 }
             });
         }
+#endif
     }
 
     public sealed class SocketsHttpHandler_Http2_TrailingHeaders_Test : SocketsHttpHandler_TrailingHeaders_Test
@@ -766,6 +768,7 @@ namespace System.Net.Http.Functional.Tests
         protected override bool UseSocketsHttpHandler => true;
         protected override bool UseHttp2 => true;
 
+#if !NET472
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.SupportsAlpn))]
         public async Task Http2GetAsync_NoTrailingHeaders_EmptyCollection()
         {
@@ -820,6 +823,7 @@ namespace System.Net.Http.Functional.Tests
                 Assert.Contains("World", response.TrailingHeaders.GetValues("Hello"));
             }
         }
+#endif
 
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.SupportsAlpn))]
         public async Task Http2GetAsync_TrailerHeaders_TrailingPseudoHeadersThrow()
@@ -843,6 +847,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
+#if !NET472
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.SupportsAlpn))]
         public async Task Http2GetAsyncResponseHeadersReadOption_TrailingHeaders_Available()
         {
@@ -938,6 +943,7 @@ namespace System.Net.Http.Functional.Tests
                 Assert.Contains("World", response.TrailingHeaders.GetValues("Hello"));
             }
         }
+#endif
     }
 
     public sealed class SocketsHttpHandler_SchSendAuxRecordHttpTest : SchSendAuxRecordHttpTest
