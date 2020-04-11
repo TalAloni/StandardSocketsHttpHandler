@@ -822,10 +822,10 @@ namespace System.Net.Http
             const int MinStatusLineLength = 12; // "HTTP/1.x 123" 
             if (line.Length < MinStatusLineLength || line[8] != ' ')
             {
-                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line)));
+                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line.ToArray())));
             }
 
-            ulong first8Bytes = BitConverter.ToUInt64(line);
+            ulong first8Bytes = BitConverter.ToUInt64(line.ToArray());
             if (first8Bytes == s_http11Bytes)
             {
                 response.SetVersionWithoutValidation(HttpVersion.Version11);
@@ -844,7 +844,7 @@ namespace System.Net.Http
                 }
                 else
                 {
-                    throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line)));
+                    throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line.ToArray())));
                 }
             }
 
@@ -852,7 +852,7 @@ namespace System.Net.Http
             byte status1 = line[9], status2 = line[10], status3 = line[11];
             if (!IsDigit(status1) || !IsDigit(status2) || !IsDigit(status3))
             {
-                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_code, Encoding.ASCII.GetString(line.Slice(9, 3))));
+                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_code, Encoding.ASCII.GetString(line.Slice(9, 3).ToArray())));
             }
             response.SetStatusCodeWithoutValidation((HttpStatusCode)(100 * (status1 - '0') + 10 * (status2 - '0') + (status3 - '0')));
 
@@ -873,7 +873,7 @@ namespace System.Net.Http
                 {
                     try
                     {
-                        response.ReasonPhrase = HttpRuleParser.DefaultHttpEncoding.GetString(reasonBytes);
+                        response.ReasonPhrase = HttpRuleParser.DefaultHttpEncoding.GetString(reasonBytes.ToArray());
                     }
                     catch (FormatException error)
                     {
@@ -883,7 +883,7 @@ namespace System.Net.Http
             }
             else
             {
-                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line)));
+                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line.ToArray())));
             }
         }
 
@@ -903,7 +903,7 @@ namespace System.Net.Http
                 if (pos == line.Length)
                 {
                     // Invalid header line that doesn't contain ':'.
-                    throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_line, Encoding.ASCII.GetString(line)));
+                    throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_line, Encoding.ASCII.GetString(line.ToArray())));
                 }
             }
 
@@ -916,7 +916,7 @@ namespace System.Net.Http
             if (!HeaderDescriptor.TryGet(line.Slice(0, pos), out HeaderDescriptor descriptor))
             {
                 // Invalid header name.
-                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_name, Encoding.ASCII.GetString(line.Slice(0, pos))));
+                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_name, Encoding.ASCII.GetString(line.Slice(0, pos).ToArray())));
             }
 
             if (isFromTrailer && descriptor.KnownHeader != null && s_disallowedTrailers.Contains(descriptor.KnownHeader))
@@ -934,14 +934,14 @@ namespace System.Net.Http
                 if (pos == line.Length)
                 {
                     // Invalid header line that doesn't contain ':'.
-                    throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_line, Encoding.ASCII.GetString(line)));
+                    throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_line, Encoding.ASCII.GetString(line.ToArray())));
                 }
             }
 
             if (line[pos++] != ':')
             {
                 // Invalid header line that doesn't contain ':'.
-                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_line, Encoding.ASCII.GetString(line)));
+                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_line, Encoding.ASCII.GetString(line.ToArray())));
             }
 
             // Skip whitespace after colon

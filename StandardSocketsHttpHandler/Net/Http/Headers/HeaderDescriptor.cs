@@ -124,7 +124,7 @@ namespace System.Net.Http.Headers
                 }
             }
 
-            return HttpRuleParser.DefaultHttpEncoding.GetString(headerValue);
+            return HttpRuleParser.DefaultHttpEncoding.GetString(headerValue.ToArray());
         }
 
         private static bool TryDecodeUtf8(ReadOnlySpan<byte> input, out string decoded)

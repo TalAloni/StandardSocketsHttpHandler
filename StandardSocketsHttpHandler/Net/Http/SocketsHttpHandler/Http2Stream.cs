@@ -398,7 +398,7 @@ namespace System.Net.Http
 
             public void OnResponseHeader(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
             {
-                if (NetEventSource.IsEnabled) Trace($"{Encoding.ASCII.GetString(name)}: {Encoding.ASCII.GetString(value)}");
+                if (NetEventSource.IsEnabled) Trace($"{Encoding.ASCII.GetString(name.ToArray())}: {Encoding.ASCII.GetString(value.ToArray())}");
                 Debug.Assert(name != null && name.Length > 0);
 
                 _headerBudgetRemaining -= name.Length + value.Length;
@@ -441,7 +441,7 @@ namespace System.Net.Http
                                 !IsDigit(status2 = value[1]) ||
                                 !IsDigit(status3 = value[2]))
                             {
-                                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_code, Encoding.ASCII.GetString(value)));
+                                throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_code, Encoding.ASCII.GetString(value.ToArray())));
                             }
 
                             int statusValue = (100 * (status1 - '0') + 10 * (status2 - '0') + (status3 - '0'));
@@ -481,7 +481,7 @@ namespace System.Net.Http
                         }
                         else
                         {
-                            if (NetEventSource.IsEnabled) Trace($"Invalid response pseudo-header '{Encoding.ASCII.GetString(name)}'.");
+                            if (NetEventSource.IsEnabled) Trace($"Invalid response pseudo-header '{Encoding.ASCII.GetString(name.ToArray())}'.");
                             throw new HttpRequestException(SR.net_http_invalid_response);
                         }
                     }
@@ -502,7 +502,7 @@ namespace System.Net.Http
                         if (!HeaderDescriptor.TryGet(name, out HeaderDescriptor descriptor))
                         {
                             // Invalid header name
-                            throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_name, Encoding.ASCII.GetString(name)));
+                            throw new HttpRequestException(String.Format(SR.net_http_invalid_response_header_name, Encoding.ASCII.GetString(name.ToArray())));
                         }
 
                         string headerValue = descriptor.GetHeaderValue(value);

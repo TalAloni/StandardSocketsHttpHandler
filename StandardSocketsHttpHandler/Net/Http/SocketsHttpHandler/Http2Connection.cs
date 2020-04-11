@@ -209,7 +209,7 @@ namespace System.Net.Http
             {
                 if (initialFrame && NetEventSource.IsEnabled)
                 {
-                    string response = Encoding.ASCII.GetString(_incomingBuffer.ActiveSpan.Slice(0, Math.Min(20, _incomingBuffer.ActiveLength)));
+                    string response = Encoding.ASCII.GetString(_incomingBuffer.ActiveSpan.Slice(0, Math.Min(20, _incomingBuffer.ActiveLength)).ToArray());
                     Trace($"HTTP/2 handshake failed. Server returned {response}");
                 }
 
