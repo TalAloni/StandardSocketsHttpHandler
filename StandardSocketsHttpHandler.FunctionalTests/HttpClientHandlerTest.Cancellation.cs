@@ -341,7 +341,7 @@ namespace System.Net.Http.Functional.Tests
                 throw new SkipTestException("Not supported on HTTP/2");
             }
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.MaxConnectionsPerServer = 1;
@@ -527,7 +527,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServerFactory.CreateClientAndServerAsync(
                 async uri =>
                 {
-                    using (var invoker = new HttpMessageInvoker(CreateHttpClientHandler()))
+                    using (var invoker = new HttpMessageInvoker(CreateSocketsHttpHandler()))
                     using (var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = content, Version = VersionFromUseHttp2 })
                     try
                     {

@@ -37,7 +37,7 @@ namespace System.Net.Http.Functional.Tests
 
         protected static Version GetVersion(bool http2) => http2 ? new Version(2, 0) : HttpVersion.Version11;
 
-        protected virtual HttpClient CreateHttpClient() => CreateHttpClient(CreateHttpClientHandler());
+        protected virtual HttpClient CreateHttpClient() => CreateHttpClient(CreateSocketsHttpHandler());
 
         protected HttpClient CreateHttpClient(HttpMessageHandler handler)
         {
@@ -46,8 +46,8 @@ namespace System.Net.Http.Functional.Tests
             return client;
         }
 
-        protected static HttpClient CreateHttpClient(string useSocketsHttpHandlerBoolString, string useHttp2String) =>
-            CreateHttpClient(CreateHttpClientHandler(useSocketsHttpHandlerBoolString, useHttp2String), useHttp2String);
+        protected static HttpClient CreateHttpClient(string useHttp2String) =>
+            CreateHttpClient(CreateSocketsHttpHandler(useHttp2String), useHttp2String);
 
         protected static HttpClient CreateHttpClient(HttpMessageHandler handler, string useHttp2String)
         {
@@ -56,10 +56,10 @@ namespace System.Net.Http.Functional.Tests
             return client;
         }
 
-        protected HttpClientHandler CreateHttpClientHandler() => CreateHttpClientHandler(UseSocketsHttpHandler, UseHttp2);
+        protected StandardSocketsHttpHandler CreateSocketsHttpHandler() => CreateSocketsHttpHandler(UseHttp2);
 
-        protected static HttpClientHandler CreateHttpClientHandler(string useSocketsHttpHandlerBoolString, string useHttp2LoopbackServerString) =>
-            CreateHttpClientHandler(bool.Parse(useSocketsHttpHandlerBoolString), bool.Parse(useHttp2LoopbackServerString));
+        protected static StandardSocketsHttpHandler CreateSocketsHttpHandler(string useHttp2LoopbackServerString) =>
+            CreateSocketsHttpHandler(bool.Parse(useHttp2LoopbackServerString));
 
         protected static void SetDefaultRequestVersion(HttpClient client, Version version)
         {
@@ -68,40 +68,17 @@ namespace System.Net.Http.Functional.Tests
             pi?.SetValue(client, version);
         }
 
-        protected static HttpClientHandler CreateHttpClientHandler(bool useSocketsHttpHandler, bool useHttp2LoopbackServer = false)
+        protected static StandardSocketsHttpHandler CreateSocketsHttpHandler(bool useHttp2LoopbackServer = false)
         {
-            HttpClientHandler handler;
-
-            if (PlatformDetection.IsUap || useSocketsHttpHandler)
-            {
-                handler = new HttpClientHandler();
-            }
-            else
-            {
-                // Create platform specific handler.
-                ConstructorInfo ctor = typeof(HttpClientHandler).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(bool) }, null);
-                Debug.Assert(ctor != null, "Couldn't find test constructor on HttpClientHandler");
-
-                handler = (HttpClientHandler)ctor.Invoke(new object[] { useSocketsHttpHandler });
-                Debug.Assert(useSocketsHttpHandler == IsSocketsHttpHandler(handler), "Unexpected handler.");
-            }
+            StandardSocketsHttpHandler handler = new StandardSocketsHttpHandler();
 
             if (useHttp2LoopbackServer)
             {
                 TestHelper.EnableUnencryptedHttp2IfNecessary(handler);
-                handler.ServerCertificateCustomValidationCallback = TestHelper.AllowAllCertificates;
+                handler.SslOptions.RemoteCertificateValidationCallback = SecurityHelper.AllowAllCertificates;
             }
 
             return handler;
-        }
-
-        protected static bool IsSocketsHttpHandler(HttpClientHandler handler) =>
-            GetUnderlyingSocketsHttpHandler(handler) != null;
-
-        protected static object GetUnderlyingSocketsHttpHandler(HttpClientHandler handler)
-        {
-            FieldInfo field = typeof(HttpClientHandler).GetField("_socketsHttpHandler", BindingFlags.Instance | BindingFlags.NonPublic);
-            return field?.GetValue(handler);
         }
 
         protected LoopbackServerFactory LoopbackServerFactory =>
@@ -117,19 +94,14 @@ namespace System.Net.Http.Functional.Tests
 
         protected HttpClient CreateHttpClientForRemoteServer(Configuration.Http.RemoteServer remoteServer)
         {
-            return CreateHttpClientForRemoteServer(remoteServer, CreateHttpClientHandler());
+            return CreateHttpClientForRemoteServer(remoteServer, CreateSocketsHttpHandler());
         }
 
-        protected HttpClient CreateHttpClientForRemoteServer(Configuration.Http.RemoteServer remoteServer, HttpClientHandler httpClientHandler)
+        protected HttpClient CreateHttpClientForRemoteServer(Configuration.Http.RemoteServer remoteServer, StandardSocketsHttpHandler httpClientHandler)
         {
             HttpMessageHandler wrappedHandler = httpClientHandler;
 
-            // ActiveIssue #39293: WinHttpHandler will downgrade to 1.1 if you set Transfer-Encoding: chunked.
-            // So, skip this verification if we're not using SocketsHttpHandler.
-            if (PlatformDetection.SupportsAlpn && IsSocketsHttpHandler(httpClientHandler))
-            {
-                wrappedHandler = new VersionCheckerHttpHandler(httpClientHandler, remoteServer.HttpVersion);
-            }
+            wrappedHandler = new VersionCheckerHttpHandler(httpClientHandler, remoteServer.HttpVersion);
 
             var client = new HttpClient(wrappedHandler);
             SetDefaultRequestVersion(client, remoteServer.HttpVersion);

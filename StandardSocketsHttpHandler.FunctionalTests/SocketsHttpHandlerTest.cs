@@ -171,7 +171,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(1)]
         public async Task SmallConnectionLifetimeWithMaxConnections_PendingRequestUsesDifferentConnection(int lifetimeMilliseconds)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 handler.PooledConnectionLifetime = TimeSpan.FromMilliseconds(lifetimeMilliseconds);
                 handler.MaxConnectionsPerServer = 1;
@@ -219,11 +219,9 @@ namespace System.Net.Http.Functional.Tests
     {
         protected override bool UseSocketsHttpHandler => true;
 
-        protected override void SetResponseDrainTimeout(HttpClientHandler handler, TimeSpan time)
+        protected override void SetResponseDrainTimeout(StandardSocketsHttpHandler handler, TimeSpan time)
         {
-            SocketsHttpHandler s = (SocketsHttpHandler)GetUnderlyingSocketsHttpHandler(handler);
-            Assert.NotNull(s);
-            s.ResponseDrainTimeout = time;
+            handler.ResponseDrainTimeout = time;
         }
 
         public SocketsHttpHandler_HttpClientHandler_ResponseDrain_Test(ITestOutputHelper output) : base(output) { }
@@ -231,7 +229,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxResponseDrainSize_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(1024 * 1024, handler.MaxResponseDrainSize);
 
@@ -246,7 +244,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxResponseDrainSize_InvalidArgument_Throws()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(1024 * 1024, handler.MaxResponseDrainSize);
 
@@ -260,7 +258,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxResponseDrainSize_SetAfterUse_Throws()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.MaxResponseDrainSize = 1;
@@ -273,7 +271,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void ResponseDrainTimeout_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(TimeSpan.FromSeconds(2), handler.ResponseDrainTimeout);
 
@@ -288,7 +286,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxResponseDraiTime_InvalidArgument_Throws()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(TimeSpan.FromSeconds(2), handler.ResponseDrainTimeout);
 
@@ -303,7 +301,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void ResponseDrainTimeout_SetAfterUse_Throws()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.ResponseDrainTimeout = TimeSpan.FromSeconds(42);
@@ -323,7 +321,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServer.CreateClientAndServerAsync(
                 async url =>
                 {
-                    var handler = new SocketsHttpHandler();
+                    var handler = new StandardSocketsHttpHandler();
                     handler.MaxResponseDrainSize = maxDrainSize;
                     handler.ResponseDrainTimeout = Timeout.InfiniteTimeSpan;
 
@@ -370,7 +368,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServer.CreateClientAndServerAsync(
                 async url =>
                 {
-                    var handler = new SocketsHttpHandler();
+                    var handler = new StandardSocketsHttpHandler();
                     handler.MaxResponseDrainSize = maxDrainSize;
                     handler.ResponseDrainTimeout = Timeout.InfiniteTimeSpan;
 
@@ -418,7 +416,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServer.CreateClientAndServerAsync(
                 async url =>
                 {
-                    var handler = new SocketsHttpHandler();
+                    var handler = new StandardSocketsHttpHandler();
                     handler.MaxResponseDrainSize = int.MaxValue;
                     handler.ResponseDrainTimeout = TimeSpan.FromMilliseconds(1);
 
@@ -562,7 +560,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     Task<HttpResponseMessage> getResponseTask = client.GetAsync(url);
@@ -615,7 +613,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     Task<HttpResponseMessage> getResponseTask = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
@@ -701,7 +699,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateClientAndServerAsync(async url =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     HttpResponseMessage response = await client.GetAsync(url);
@@ -731,7 +729,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     Task<HttpResponseMessage> getResponseTask = client.GetAsync(url);
@@ -992,7 +990,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void ConnectTimeout_Default()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(Timeout.InfiniteTimeSpan, handler.ConnectTimeout);
             }
@@ -1004,7 +1002,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(int.MaxValue + 1L)]
         public void ConnectTimeout_InvalidValues(long ms)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Throws<ArgumentOutOfRangeException>(() => handler.ConnectTimeout = TimeSpan.FromMilliseconds(ms));
             }
@@ -1017,7 +1015,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(int.MaxValue)]
         public void ConnectTimeout_ValidValues_Roundtrip(long ms)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 handler.ConnectTimeout = TimeSpan.FromMilliseconds(ms);
                 Assert.Equal(TimeSpan.FromMilliseconds(ms), handler.ConnectTimeout);
@@ -1027,7 +1025,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void ConnectTimeout_SetAfterUse_Throws()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.ConnectTimeout = TimeSpan.FromMilliseconds(int.MaxValue);
@@ -1044,7 +1042,7 @@ namespace System.Net.Http.Functional.Tests
             var releaseServer = new TaskCompletionSource<bool>();
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (var handler = new SocketsHttpHandler())
+                using (var handler = new StandardSocketsHttpHandler())
                 using (var invoker = new HttpMessageInvoker(handler))
                 {
                     handler.ConnectTimeout = TimeSpan.FromSeconds(1);
@@ -1065,7 +1063,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void Expect100ContinueTimeout_Default()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(TimeSpan.FromSeconds(1), handler.Expect100ContinueTimeout);
             }
@@ -1076,7 +1074,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(int.MaxValue + 1L)]
         public void Expect100ContinueTimeout_InvalidValues(long ms)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Throws<ArgumentOutOfRangeException>(() => handler.Expect100ContinueTimeout = TimeSpan.FromMilliseconds(ms));
             }
@@ -1089,7 +1087,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(int.MaxValue)]
         public void Expect100ContinueTimeout_ValidValues_Roundtrip(long ms)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 handler.Expect100ContinueTimeout = TimeSpan.FromMilliseconds(ms);
                 Assert.Equal(TimeSpan.FromMilliseconds(ms), handler.Expect100ContinueTimeout);
@@ -1099,7 +1097,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void Expect100ContinueTimeout_SetAfterUse_Throws()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.Expect100ContinueTimeout = TimeSpan.FromMilliseconds(int.MaxValue);
@@ -1115,7 +1113,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (var handler = new SocketsHttpHandler())
+                using (var handler = new StandardSocketsHttpHandler())
                 using (var invoker = new HttpMessageInvoker(handler))
                 {
                     TimeSpan delay = TimeSpan.FromSeconds(3);
@@ -1549,7 +1547,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData("PooledConnectionIdleTimeout")]
         public async Task SmallConnectionTimeout_SubsequentRequestUsesDifferentConnection(string timeoutPropertyName)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 switch (timeoutPropertyName)
                 {
@@ -1592,12 +1590,11 @@ namespace System.Net.Http.Functional.Tests
         {
             await Http2LoopbackServerFactory.CreateServerAsync(async (server, url) =>
             {
-                HttpClientHandler handler = CreateHttpClientHandler(useSocketsHttpHandler : true, useHttp2LoopbackServer : true);
-                SocketsHttpHandler s = (SocketsHttpHandler)GetUnderlyingSocketsHttpHandler(handler);
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler(useHttp2LoopbackServer : true);
                 switch (timeoutPropertyName)
                 {
-                    case "PooledConnectionLifetime": s.PooledConnectionLifetime = TimeSpan.FromMilliseconds(1); break;
-                    case "PooledConnectionIdleTimeout": s.PooledConnectionLifetime = TimeSpan.FromMilliseconds(1); break;
+                    case "PooledConnectionLifetime": handler.PooledConnectionLifetime = TimeSpan.FromMilliseconds(1); break;
+                    case "PooledConnectionIdleTimeout": handler.PooledConnectionLifetime = TimeSpan.FromMilliseconds(1); break;
                     default: throw new ArgumentOutOfRangeException(nameof(timeoutPropertyName));
                 }
 
@@ -1640,7 +1637,7 @@ namespace System.Net.Http.Functional.Tests
                 var releaseServer = new TaskCompletionSource<bool>();
                 await LoopbackServer.CreateClientAndServerAsync(async uri =>
                 {
-                    using (var handler = new SocketsHttpHandler())
+                    using (var handler = new StandardSocketsHttpHandler())
                     using (HttpClient client = CreateHttpClient(handler, useHttp2String))
                     {
                         handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
@@ -1699,7 +1696,7 @@ namespace System.Net.Http.Functional.Tests
             // Make a bunch of requests and drop the associated HttpClient instances after making them, without disposal.
             Task.WaitAll((from i in Enumerable.Range(0, 10)
                           select LoopbackServer.CreateClientAndServerAsync(
-                              url => CreateHttpClient(new SocketsHttpHandler { Proxy = p }).GetStringAsync(url),
+                              url => CreateHttpClient(new StandardSocketsHttpHandler { Proxy = p }).GetStringAsync(url),
                               server => server.AcceptConnectionSendResponseAndCloseAsync())).ToArray());
         }
 
@@ -1728,7 +1725,7 @@ namespace System.Net.Http.Functional.Tests
                         "Content-Length: 0\r\n" +
                         "\r\n";
 
-                using  (var handler = new HttpClientHandler())
+                using  (var handler = new StandardSocketsHttpHandler())
                 {
                     handler.Proxy = new UseSpecifiedUriWebProxy(proxyUrl, new NetworkCredential("abc", "def"));
 
@@ -1758,7 +1755,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void AllowAutoRedirect_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.True(handler.AllowAutoRedirect);
 
@@ -1773,7 +1770,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void AutomaticDecompression_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(DecompressionMethods.None, handler.AutomaticDecompression);
 
@@ -1791,7 +1788,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void CookieContainer_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 CookieContainer container = handler.CookieContainer;
                 Assert.Same(container, handler.CookieContainer);
@@ -1805,7 +1802,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void Credentials_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Null(handler.Credentials);
 
@@ -1818,7 +1815,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void DefaultProxyCredentials_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Null(handler.DefaultProxyCredentials);
 
@@ -1831,7 +1828,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxAutomaticRedirections_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(50, handler.MaxAutomaticRedirections);
 
@@ -1849,7 +1846,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxConnectionsPerServer_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(int.MaxValue, handler.MaxConnectionsPerServer);
 
@@ -1867,7 +1864,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void MaxResponseHeadersLength_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(64, handler.MaxResponseHeadersLength);
 
@@ -1885,7 +1882,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void PreAuthenticate_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.False(handler.PreAuthenticate);
 
@@ -1900,7 +1897,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void PooledConnectionIdleTimeout_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(TimeSpan.FromMinutes(2), handler.PooledConnectionIdleTimeout);
 
@@ -1920,7 +1917,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void PooledConnectionLifetime_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Equal(Timeout.InfiniteTimeSpan, handler.PooledConnectionLifetime);
 
@@ -1940,7 +1937,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void Properties_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 IDictionary<string, object> props = handler.Properties;
                 Assert.NotNull(props);
@@ -1955,7 +1952,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void Proxy_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.Null(handler.Proxy);
 
@@ -1968,7 +1965,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void SslOptions_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 SslClientAuthenticationOptions options = handler.SslOptions;
                 Assert.NotNull(options);
@@ -1994,7 +1991,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void UseCookies_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.True(handler.UseCookies);
 
@@ -2009,7 +2006,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void UseProxy_GetSet_Roundtrips()
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Assert.True(handler.UseProxy);
 
@@ -2026,7 +2023,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(true)]
         public async Task AfterDisposeSendAsync_GettersUsable_SettersThrow(bool dispose)
         {
-            using (var handler = new SocketsHttpHandler())
+            using (var handler = new StandardSocketsHttpHandler())
             {
                 Type expectedExceptionType;
                 if (dispose)
@@ -2078,88 +2075,6 @@ namespace System.Net.Http.Functional.Tests
         }
     }
 
-    public sealed class SocketsHttpHandler_ExternalConfiguration_Test : HttpClientHandlerTestBase
-    {
-        public SocketsHttpHandler_ExternalConfiguration_Test(ITestOutputHelper output) : base(output) { }
-
-        private const string EnvironmentVariableSettingName = "DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER";
-        private const string AppContextSettingName = "System.Net.Http.UseSocketsHttpHandler";
-
-        private static bool UseSocketsHttpHandlerEnvironmentVariableIsNotSet =>
-            string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvironmentVariableSettingName));
-
-        [ConditionalTheory(nameof(UseSocketsHttpHandlerEnvironmentVariableIsNotSet))]
-        [InlineData("true", true)]
-        [InlineData("TRUE", true)]
-        [InlineData("tRuE", true)]
-        [InlineData("1", true)]
-        [InlineData("0", false)]
-        [InlineData("false", false)]
-        [InlineData("helloworld", true)]
-        [InlineData("", true)]
-        public void HttpClientHandler_SettingEnvironmentVariableChangesDefault(string envVarValue, bool expectedUseSocketsHandler)
-        {
-            RemoteExecutor.Invoke((innerEnvVarValue, innerExpectedUseSocketsHandler) =>
-            {
-                Environment.SetEnvironmentVariable(EnvironmentVariableSettingName, innerEnvVarValue);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.Equal(bool.Parse(innerExpectedUseSocketsHandler), IsSocketsHttpHandler(handler));
-                }
-                return RemoteExecutor.SuccessExitCode;
-            }, envVarValue, expectedUseSocketsHandler.ToString()).Dispose();
-        }
-
-        [Fact]
-        public void HttpClientHandler_SettingAppContextChangesDefault()
-        {
-            RemoteExecutor.Invoke(() =>
-            {
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: true);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.True(IsSocketsHttpHandler(handler));
-                }
-
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: false);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.False(IsSocketsHttpHandler(handler));
-                }
-
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();
-        }
-
-        [Fact]
-        public void HttpClientHandler_AppContextOverridesEnvironmentVariable()
-        {
-            RemoteExecutor.Invoke(() =>
-            {
-                Environment.SetEnvironmentVariable(EnvironmentVariableSettingName, "true");
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.True(IsSocketsHttpHandler(handler));
-                }
-
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: false);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.False(IsSocketsHttpHandler(handler));
-                }
-
-                AppContext.SetSwitch(AppContextSettingName, isEnabled: true);
-                Environment.SetEnvironmentVariable(EnvironmentVariableSettingName, null);
-                using (var handler = new HttpClientHandler())
-                {
-                    Assert.True(IsSocketsHttpHandler(handler));
-                }
-
-                return RemoteExecutor.SuccessExitCode;
-            }).Dispose();
-        }
-    }
-
     public sealed class SocketsHttpHandlerTest_LocationHeader
     {
         private static readonly byte[] s_redirectResponseBefore = Encoding.ASCII.GetBytes(
@@ -2195,7 +2110,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateClientAndServerAsync(async url =>
             {
-                using (HttpClientHandler handler = new HttpClientHandler())
+                using (StandardSocketsHttpHandler handler = new StandardSocketsHttpHandler())
                 {
                     handler.AllowAutoRedirect = false;
 

@@ -268,7 +268,7 @@ namespace System.Net.Http.Functional.Tests
         {
             Uri serverUri = remoteServer.BasicAuthUriForCreds(UserName, Password);
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.PreAuthenticate = preAuthenticate;
             handler.Credentials = credential;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))

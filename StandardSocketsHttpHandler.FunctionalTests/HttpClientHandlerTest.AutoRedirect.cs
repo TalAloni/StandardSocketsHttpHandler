@@ -74,7 +74,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = false;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
@@ -108,7 +108,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (HttpClient client = CreateHttpClient(handler))
             {
                 await LoopbackServer.CreateServerAsync(async (origServer, origUrl) =>
@@ -168,7 +168,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (HttpClient client = CreateHttpClient(handler))
             {
                 await LoopbackServer.CreateServerAsync(async (origServer, origUrl) =>
@@ -233,7 +233,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
@@ -254,7 +254,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_AllowAutoRedirectTrue_RedirectFromHttpToHttps_StatusCodeOK()
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -275,7 +275,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_AllowAutoRedirectTrue_RedirectFromHttpsToHttp_StatusCodeRedirect()
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -302,7 +302,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -325,7 +325,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RemoteServersMemberData))]
         public async Task GetAsync_AllowAutoRedirectTrue_RedirectToUriWithParams_RequestMsgUriSet(Configuration.Http.RemoteServer remoteServer)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             Uri targetUri = remoteServer.BasicAuthUriForCreds(userName: Username, password: Password);
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
@@ -358,7 +358,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.MaxAutomaticRedirections = maxHops;
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -396,7 +396,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RemoteServersMemberData))]
         public async Task GetAsync_AllowAutoRedirectTrue_RedirectWithRelativeLocation(Configuration.Http.RemoteServer remoteServer)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
@@ -421,7 +421,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(400)]
         public async Task GetAsync_AllowAutoRedirectTrue_NonRedirectStatusCode_LocationHeader_NoRedirect(int statusCode)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -479,7 +479,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AllowAutoRedirect = true;
             using (HttpClient client = CreateHttpClient(handler))
             {
@@ -523,7 +523,7 @@ namespace System.Net.Http.Functional.Tests
         [OuterLoop("Uses external server")]
         public async Task GetAsync_CredentialIsNetworkCredentialUriRedirect_StatusCodeUnauthorized(Configuration.Http.RemoteServer remoteServer)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.Credentials = _credential;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
@@ -543,7 +543,7 @@ namespace System.Net.Http.Functional.Tests
         [OuterLoop("Uses external server")]
         public async Task HttpClientHandler_CredentialIsNotCredentialCacheAfterRedirect_StatusCodeOK(Configuration.Http.RemoteServer remoteServer)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.Credentials = _credential;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
@@ -585,7 +585,7 @@ namespace System.Net.Http.Functional.Tests
             var credentialCache = new CredentialCache();
             credentialCache.Add(uri, "Basic", _credential);
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             if (PlatformDetection.IsUap)
             {
                 // UAP does not support CredentialCache for Credentials.
@@ -616,7 +616,7 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
                 string credentialString = _credential.UserName + ":" + _credential.Password;

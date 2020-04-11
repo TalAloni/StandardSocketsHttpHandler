@@ -70,7 +70,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     handler.AutomaticDecompression = methods;
@@ -136,7 +136,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     handler.AutomaticDecompression = methods;
@@ -157,7 +157,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RemoteServersAndCompressionUris))]
         public async Task GetAsync_SetAutomaticDecompression_ContentDecompressed(Configuration.Http.RemoteServer remoteServer, Uri uri)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             {
@@ -179,7 +179,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RemoteServersAndCompressionUris))]
         public async Task GetAsync_SetAutomaticDecompression_HeadersRemoved(Configuration.Http.RemoteServer remoteServer, Uri uri)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer, handler))
             using (HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead))
@@ -228,7 +228,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 handler.AutomaticDecompression = methods;
 
                 using (HttpClient client = CreateHttpClient(handler))

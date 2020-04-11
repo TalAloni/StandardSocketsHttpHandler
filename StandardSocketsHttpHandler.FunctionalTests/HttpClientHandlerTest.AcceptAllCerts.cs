@@ -20,14 +20,6 @@ namespace System.Net.Http.Functional.Tests
 
         public HttpClientHandler_DangerousAcceptAllCertificatesValidator_Test(ITestOutputHelper output) : base(output) { }
 
-        [Fact]
-        public void SingletonReturnsTrue()
-        {
-            Assert.NotNull(HttpClientHandler.DangerousAcceptAnyServerCertificateValidator);
-            Assert.Same(HttpClientHandler.DangerousAcceptAnyServerCertificateValidator, HttpClientHandler.DangerousAcceptAnyServerCertificateValidator);
-            Assert.True(HttpClientHandler.DangerousAcceptAnyServerCertificateValidator(null, null, null, SslPolicyErrors.None));
-        }
-
         [ConditionalTheory]
         [InlineData(SslProtocols.Tls, false)] // try various protocols to ensure we correctly set versions even when accepting all certs
         [InlineData(SslProtocols.Tls, true)]
@@ -53,14 +45,14 @@ namespace System.Net.Http.Functional.Tests
                 throw new SkipTestException("OSX may pick future cipher suites when asked for TLS1.0");
             }
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
-                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                handler.SslOptions.RemoteCertificateValidationCallback = SecurityHelper.AllowAllCertificates;
 
                 if (requestOnlyThisProtocol)
                 {
-                    handler.SslProtocols = acceptedProtocol;
+                    handler.SslOptions.EnabledSslProtocols = acceptedProtocol;
                 }
                 else
                 {
@@ -68,7 +60,7 @@ namespace System.Net.Http.Functional.Tests
                     // restrictions on minimum TLS/SSL version
                     // We currently know that some platforms like Debian 10 OpenSSL
                     // will by default block < TLS 1.2
-                    handler.SslProtocols = SslProtocols.Tls13 | SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls;
+                    handler.SslOptions.EnabledSslProtocols = SslProtocols.Tls13 | SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls;
                 }
 
                 var options = new LoopbackServer.Options { UseSsl = true, SslProtocols = acceptedProtocol };
@@ -93,10 +85,10 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(InvalidCertificateServers))]
         public async Task InvalidCertificateServers_CertificateValidationDisabled_Succeeds(string url)
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
-                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                handler.SslOptions.RemoteCertificateValidationCallback = SecurityHelper.AllowAllCertificates;
                 (await client.GetAsync(url)).Dispose();
             }
         }

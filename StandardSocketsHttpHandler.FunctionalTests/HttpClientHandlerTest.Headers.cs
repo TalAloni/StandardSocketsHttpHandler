@@ -52,7 +52,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServerFactory.CreateClientAndServerAsync(async uri =>
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 using (HttpClient client = CreateHttpClient())
                 {
                     var request = new HttpRequestMessage(HttpMethod.Get, uri) { Version = VersionFromUseHttp2 };

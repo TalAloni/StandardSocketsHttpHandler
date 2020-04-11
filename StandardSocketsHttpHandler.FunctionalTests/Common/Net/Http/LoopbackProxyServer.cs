@@ -202,7 +202,7 @@ namespace System.Net.Test.Common
                 requestMessage.Headers.Add("Via", ViaHeaderValue);
             }
 
-            var handler = new HttpClientHandler() { UseProxy = false };
+            var handler = new StandardSocketsHttpHandler() { UseProxy = false };
             using (HttpClient outboundClient = new HttpClient(handler))
             using (HttpResponseMessage response = await outboundClient.SendAsync(requestMessage).ConfigureAwait(false))
             {

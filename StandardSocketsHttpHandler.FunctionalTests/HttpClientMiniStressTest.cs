@@ -87,7 +87,7 @@ namespace System.Net.Http.Functional.Tests
 
         protected override HttpClient CreateHttpClient() =>
             CreateHttpClient(
-                new SocketsHttpHandler()
+                new StandardSocketsHttpHandler()
                 {
                     SslOptions = new SslClientAuthenticationOptions()
                     {

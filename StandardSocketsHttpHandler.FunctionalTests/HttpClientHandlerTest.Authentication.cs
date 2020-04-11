@@ -28,7 +28,7 @@ namespace System.Net.Http.Functional.Tests
         private static readonly NetworkCredential s_credentials = new NetworkCredential(Username, Password, Domain);
         private static readonly NetworkCredential s_credentialsNoDomain = new NetworkCredential(Username, Password);
 
-        private async Task CreateAndValidateRequest(HttpClientHandler handler, Uri url, HttpStatusCode expectedStatusCode, ICredentials credentials)
+        private async Task CreateAndValidateRequest(StandardSocketsHttpHandler handler, Uri url, HttpStatusCode expectedStatusCode, ICredentials credentials)
         {
             handler.Credentials = credentials;
 
@@ -60,7 +60,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
                 string serverAuthenticateHeader = $"WWW-Authenticate: {authenticateHeader}\r\n";
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 Task serverTask = result ?
                     server.AcceptConnectionPerformAuthenticationAndCloseAsync(serverAuthenticateHeader) :
                     server.AcceptConnectionSendResponseAndCloseAsync(HttpStatusCode.Unauthorized, serverAuthenticateHeader);
@@ -100,7 +100,7 @@ namespace System.Net.Http.Functional.Tests
             var options = new LoopbackServer.Options { Domain = Domain, Username = Username, Password = Password };
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 Task serverTask = server.AcceptConnectionPerformAuthenticationAndCloseAsync(authenticateHeader);
                 await TestHelper.WhenAllCompletedOrAnyFailed(CreateAndValidateRequest(handler, url, HttpStatusCode.OK, s_credentials), serverTask);
             }, options);
@@ -120,8 +120,7 @@ namespace System.Net.Http.Functional.Tests
             var options = new LoopbackServer.Options { Domain = Domain, Username = Username, Password = Password };
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
-                handler.UseDefaultCredentials = false;
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
 
                 var credentials = new CredentialCache();
                 credentials.Add(url, supportedAuth, new NetworkCredential(Username, Password, Domain));
@@ -140,7 +139,7 @@ namespace System.Net.Http.Functional.Tests
             var options = new LoopbackServer.Options { Domain = Domain, Username = Username, Password = Password };
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 Task serverTask = server.AcceptConnectionPerformAuthenticationAndCloseAsync(authenticateHeader);
                 await TestHelper.WhenAllCompletedOrAnyFailed(CreateAndValidateRequest(handler, url, HttpStatusCode.Unauthorized, new NetworkCredential("wronguser", "wrongpassword")), serverTask);
             }, options);
@@ -188,7 +187,7 @@ namespace System.Net.Http.Functional.Tests
             const int NumRequests = 3;
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     client.DefaultRequestHeaders.ConnectionClose = true; // for simplicity of not needing to know every handler's pooling policy
@@ -236,7 +235,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     client.DefaultRequestHeaders.ConnectionClose = true; // for simplicity of not needing to know every handler's pooling policy
@@ -330,7 +329,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     client.DefaultRequestHeaders.ConnectionClose = true; // for simplicity of not needing to know every handler's pooling policy
@@ -374,7 +373,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     client.DefaultRequestHeaders.ConnectionClose = true; // for simplicity of not needing to know every handler's pooling policy
@@ -410,7 +409,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     client.DefaultRequestHeaders.ConnectionClose = true; // for simplicity of not needing to know every handler's pooling policy
@@ -468,7 +467,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     client.DefaultRequestHeaders.ConnectionClose = true; // for simplicity of not needing to know every handler's pooling policy
@@ -547,7 +546,7 @@ namespace System.Net.Http.Functional.Tests
             var options = new LoopbackProxyServer.Options { AuthenticationSchemes = AuthenticationSchemes.Negotiate };
             using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create(options))
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     // Use 'localhost' DNS name for loopback proxy server (instead of IP address) so that the SPN will
@@ -581,7 +580,7 @@ namespace System.Net.Http.Functional.Tests
                 throw new SkipTestException("Skipping test on CurlHandler (libCurl)");
             }
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.Credentials = DomainCredential;
@@ -604,7 +603,7 @@ namespace System.Net.Http.Functional.Tests
                 throw new SkipTestException("Skipping test on platform handlers (CurlHandler, WinHttpHandler)");
             }
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.Credentials = DomainCredential;
@@ -636,7 +635,7 @@ namespace System.Net.Http.Functional.Tests
                 throw new SkipTestException("CurlHandler (libCurl) doesn't handle Negotiate with NTLM fallback nor CBT");
             }
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.Credentials = new NetworkCredential(
@@ -665,7 +664,7 @@ namespace System.Net.Http.Functional.Tests
             await LoopbackServerFactory.CreateClientAndServerAsync(
                 async uri =>
                 {
-                    using (HttpClientHandler handler = CreateHttpClientHandler())
+                    using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                     using (HttpClient client = CreateHttpClient(handler))
                     {
                         handler.Credentials = new NetworkCredential("username", "password");

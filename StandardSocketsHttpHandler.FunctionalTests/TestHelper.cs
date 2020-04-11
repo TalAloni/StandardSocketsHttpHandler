@@ -119,36 +119,21 @@ namespace System.Net.Http.Functional.Tests
                 .Where(a => a.IsIPv6LinkLocal)
                 .FirstOrDefault();
 
-        public static void EnableUnencryptedHttp2IfNecessary(HttpClientHandler handler)
+        public static void EnableUnencryptedHttp2IfNecessary(StandardSocketsHttpHandler handler)
         {
             if (PlatformDetection.SupportsAlpn && !Capability.Http2ForceUnencryptedLoopback())
             {
                 return;
             }
 
-            FieldInfo socketsHttpHandlerField = typeof(HttpClientHandler).GetField("_socketsHttpHandler", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (socketsHttpHandlerField == null)
-            {
-                // Not using .NET Core implementation, i.e. could be .NET Framework or UAP.
-                return;
-            }
-
-            object socketsHttpHandler = socketsHttpHandlerField.GetValue(handler);
-            if (socketsHttpHandler == null)
-            {
-                // Not using SocketsHttpHandler, i.e. using WinHttpHandler or CurlHandler.
-                return;
-            }
-
-            // Get HttpConnectionSettings object from SocketsHttpHandler.
-            Type socketsHttpHandlerType = typeof(HttpClientHandler).Assembly.GetType("System.Net.Http.SocketsHttpHandler");
-            FieldInfo settingsField = socketsHttpHandlerType.GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance);
+            // Get HttpConnectionSettings object from StandardSocketsHttpHandler.
+            FieldInfo settingsField = typeof(StandardSocketsHttpHandler).GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.NotNull(settingsField);
-            object settings = settingsField.GetValue(socketsHttpHandler);
+            object settings = settingsField.GetValue(handler);
             Assert.NotNull(settings);
 
             // Allow HTTP/2.0 via unencrypted socket if ALPN is not supported on platform.
-            Type httpConnectionSettingsType = typeof(HttpClientHandler).Assembly.GetType("System.Net.Http.HttpConnectionSettings");
+            Type httpConnectionSettingsType = typeof(StandardSocketsHttpHandler).Assembly.GetType("System.Net.Http.HttpConnectionSettings");
             FieldInfo allowUnencryptedHttp2Field = httpConnectionSettingsType.GetField("_allowUnencryptedHttp2", BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.NotNull(allowUnencryptedHttp2Field);
             allowUnencryptedHttp2Field.SetValue(settings, true);

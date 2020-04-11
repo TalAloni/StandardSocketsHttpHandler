@@ -29,7 +29,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServerFactory.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 {
                     handler.UseProxy = true;
                     handler.Proxy = proxy;
@@ -104,7 +104,7 @@ namespace System.Net.Http.Functional.Tests
                 };
             using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create(options))
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     handler.Proxy = new WebProxy(proxyServer.Uri);
@@ -120,35 +120,6 @@ namespace System.Net.Http.Functional.Tests
                     }
                 }
             }
-        }
-
-        [OuterLoop("Uses external server")]
-        [ConditionalFact]
-        public void Proxy_UseEnvironmentVariableToSetSystemProxy_RequestGoesThruProxy()
-        {
-            if (!UseSocketsHttpHandler)
-            {
-                throw new SkipTestException("Test needs SocketsHttpHandler");
-            }
-
-            RemoteExecutor.Invoke(async (useSocketsHttpHandlerString, useHttp2String) =>
-            {
-                var options = new LoopbackProxyServer.Options { AddViaRequestHeader = true };
-                using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create(options))
-                {
-                    Environment.SetEnvironmentVariable("http_proxy", proxyServer.Uri.AbsoluteUri.ToString());
-
-                    using (HttpClient client = CreateHttpClient(useSocketsHttpHandlerString, useHttp2String))
-                    using (HttpResponseMessage response = await client.GetAsync(Configuration.Http.RemoteEchoServer))
-                    {
-                        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                        string body = await response.Content.ReadAsStringAsync();
-                        Assert.Contains(proxyServer.ViaHeader, body);
-                    }
-
-                    return RemoteExecutor.SuccessExitCode;
-                }
-            }, UseSocketsHttpHandler.ToString(), UseHttp2.ToString()).Dispose();
         }
 
         [ActiveIssue(32809)]
@@ -171,7 +142,7 @@ namespace System.Net.Http.Functional.Tests
                     creds = cache;
                 }
 
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     handler.Proxy = new WebProxy(proxyServer.Uri) { Credentials = creds };
@@ -213,7 +184,7 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(BypassedProxies))]
         public async Task Proxy_BypassTrue_GetRequestDoesntGoesThroughCustomProxy(IWebProxy proxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.Proxy = proxy;
             using (HttpClient client = CreateHttpClient(handler))
             using (HttpResponseMessage response = await client.GetAsync(Configuration.Http.RemoteEchoServer))
@@ -233,7 +204,7 @@ namespace System.Net.Http.Functional.Tests
             var options = new LoopbackProxyServer.Options { AuthenticationSchemes = AuthenticationSchemes.Basic };
             using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create(options))
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 handler.Proxy = new WebProxy(proxyServer.Uri);
                 using (HttpClient client = CreateHttpClient(handler))
                 using (HttpResponseMessage response = await client.GetAsync(Configuration.Http.RemoteEchoServer))
@@ -246,7 +217,7 @@ namespace System.Net.Http.Functional.Tests
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // [ActiveIssue(11057)]
         public async Task Proxy_SslProxyUnsupported_Throws()
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.Proxy = new WebProxy("https://" + Guid.NewGuid().ToString("N"));
@@ -272,7 +243,7 @@ namespace System.Net.Http.Functional.Tests
 
             using (LoopbackProxyServer proxyServer = LoopbackProxyServer.Create())
             {
-                HttpClientHandler handler = CreateHttpClientHandler();
+                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 handler.Proxy = new WebProxy(proxyServer.Uri);
                 using (HttpClient client = CreateHttpClient(handler))
                 using (HttpResponseMessage response = await client.GetAsync(Configuration.Http.SecureRemoteEchoServer))
@@ -301,7 +272,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateServerAsync(async (proxyServer, proxyUrl) =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     handler.Proxy = new WebProxy(proxyUrl) { Credentials = proxyCreds };

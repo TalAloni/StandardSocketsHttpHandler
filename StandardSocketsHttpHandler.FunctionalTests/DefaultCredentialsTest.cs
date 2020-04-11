@@ -43,7 +43,7 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(AuthenticatedServers))]
         public async Task UseDefaultCredentials_DefaultValue_Unauthorized(string uri, bool useProxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
 
             using (HttpClient client = CreateHttpClient(handler))
@@ -58,9 +58,8 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(AuthenticatedServers))]
         public async Task UseDefaultCredentials_SetFalse_Unauthorized(string uri, bool useProxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
-            handler.UseDefaultCredentials = false;
 
             using (HttpClient client = CreateHttpClient(handler))
             using (HttpResponseMessage response = await client.GetAsync(uri))
@@ -74,9 +73,8 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(AuthenticatedServers))]
         public async Task UseDefaultCredentials_SetTrue_ConnectAsCurrentIdentity(string uri, bool useProxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
-            handler.UseDefaultCredentials = true;
 
             using (HttpClient client = CreateHttpClient(handler))
             using (HttpResponseMessage response = await client.GetAsync(uri))
@@ -95,7 +93,7 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(AuthenticatedServers))]
         public async Task Credentials_SetToWrappedDefaultCredential_ConnectAsCurrentIdentity(string uri, bool useProxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
             handler.Credentials = new CredentialWrapper
             {
@@ -119,7 +117,7 @@ namespace System.Net.Http.Functional.Tests
         [MemberData(nameof(AuthenticatedServers))]
         public async Task Credentials_SetToBadCredential_Unauthorized(string uri, bool useProxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
             handler.Credentials = new NetworkCredential("notarealuser", "123456");
 
@@ -137,9 +135,8 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(true)]
         public async Task Credentials_SetToSpecificCredential_ConnectAsSpecificIdentity(bool useProxy)
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
-            handler.UseDefaultCredentials = false;
             handler.Credentials = _specificCredential;
 
             using (HttpClient client = CreateHttpClient(handler))
@@ -157,7 +154,7 @@ namespace System.Net.Http.Functional.Tests
         [ConditionalFact(nameof(DomainProxyTestsEnabled))]
         public async Task Proxy_UseAuthenticatedProxyWithNoCredentials_ProxyAuthenticationRequired()
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.Proxy = new AuthenticatedProxy(null);
 
             using (HttpClient client = CreateHttpClient(handler))
@@ -172,7 +169,7 @@ namespace System.Net.Http.Functional.Tests
         [ConditionalFact(nameof(DomainProxyTestsEnabled))]
         public async Task Proxy_UseAuthenticatedProxyWithDefaultCredentials_OK()
         {
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.Proxy = new AuthenticatedProxy(CredentialCache.DefaultCredentials);
 
             using (HttpClient client = CreateHttpClient(handler))
@@ -191,7 +188,7 @@ namespace System.Net.Http.Functional.Tests
                 InnerCredentials = CredentialCache.DefaultCredentials
             };
 
-            HttpClientHandler handler = CreateHttpClientHandler();
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.Proxy = new AuthenticatedProxy(wrappedCreds);
 
             using (HttpClient client = CreateHttpClient(handler))

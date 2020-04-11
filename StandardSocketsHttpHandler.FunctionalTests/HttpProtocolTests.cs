@@ -559,7 +559,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async uri =>
             {
-                using (HttpMessageInvoker client = new HttpMessageInvoker(CreateHttpClientHandler()))
+                using (HttpMessageInvoker client = new HttpMessageInvoker(CreateSocketsHttpHandler()))
                 using (HttpResponseMessage resp = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, uri) { Version = VersionFromUseHttp2 }, CancellationToken.None))
                 using (Stream respStream = await resp.Content.ReadAsStreamAsync())
                 {

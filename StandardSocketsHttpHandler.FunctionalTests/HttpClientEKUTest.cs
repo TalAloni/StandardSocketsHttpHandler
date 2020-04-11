@@ -54,7 +54,7 @@ namespace System.Net.Http.Functional.Tests
             options.ServerCertificate = serverCertificateNoEku;
 
             using (var server = new HttpsTestServer(options))
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 server.Start();
@@ -76,7 +76,7 @@ namespace System.Net.Http.Functional.Tests
             options.ServerCertificate = serverCertificateWrongEku;
 
             using (var server = new HttpsTestServer(options))
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 server.Start();
@@ -99,7 +99,7 @@ namespace System.Net.Http.Functional.Tests
             options.RequireClientAuthentication = true;
 
             using (var server = new HttpsTestServer(options))
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 server.Start();
@@ -108,7 +108,8 @@ namespace System.Net.Http.Functional.Tests
                 tasks[0] = server.AcceptHttpsClientAsync();
 
                 string requestUriString = GetUriStringAndConfigureHandler(options, server, handler);
-                handler.ClientCertificates.Add(clientCertificateNoEku);
+                handler.SslOptions.ClientCertificates = new X509CertificateCollection();
+                handler.SslOptions.ClientCertificates.Add(clientCertificateNoEku);
                 tasks[1] = client.GetStringAsync(requestUriString);
 
                 await tasks.WhenAllOrAnyFailed(TestTimeoutMilliseconds);
@@ -123,7 +124,7 @@ namespace System.Net.Http.Functional.Tests
             options.RequireClientAuthentication = true;
 
             using (var server = new HttpsTestServer(options))
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 server.Start();
@@ -132,7 +133,8 @@ namespace System.Net.Http.Functional.Tests
                 tasks[0] = server.AcceptHttpsClientAsync();
 
                 string requestUriString = GetUriStringAndConfigureHandler(options, server, handler);
-                handler.ClientCertificates.Add(clientCertificateWrongEku);
+                handler.SslOptions.ClientCertificates = new X509CertificateCollection();
+                handler.SslOptions.ClientCertificates.Add(clientCertificateWrongEku);
                 tasks[1] = client.GetStringAsync(requestUriString);
 
                 // Server aborts the TCP channel.
@@ -142,7 +144,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-        private string GetUriStringAndConfigureHandler(HttpsTestServer.Options options, HttpsTestServer server, HttpClientHandler handler)
+        private string GetUriStringAndConfigureHandler(HttpsTestServer.Options options, HttpsTestServer server, StandardSocketsHttpHandler handler)
         {
             if (Capability.AreHostsFileNamesInstalled())
             {
@@ -154,12 +156,12 @@ namespace System.Net.Http.Functional.Tests
             }
             else
             {
-                handler.ServerCertificateCustomValidationCallback = AllowRemoteCertificateNameMismatch;
+                handler.SslOptions.RemoteCertificateValidationCallback = AllowRemoteCertificateNameMismatch;
                 return "https://localhost:" + server.Port.ToString();
             }
         }
 
-        private bool AllowRemoteCertificateNameMismatch(HttpRequestMessage httpMessage, X509Certificate2 certificate, X509Chain chain, SslPolicyErrors errors)
+        private bool AllowRemoteCertificateNameMismatch(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors)
         {
             if (errors == SslPolicyErrors.RemoteCertificateNameMismatch)
             {

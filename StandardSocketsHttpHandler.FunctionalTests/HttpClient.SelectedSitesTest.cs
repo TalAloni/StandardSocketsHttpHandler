@@ -114,7 +114,7 @@ namespace System.Net.Http.Functional.Tests
 
         private HttpClient CreateHttpClientForSiteVisit()
         {
-            HttpClient httpClient = CreateHttpClient(CreateHttpClientHandler(UseSocketsHttpHandler));
+            HttpClient httpClient = CreateHttpClient(CreateSocketsHttpHandler());
 
             // Some extra headers since some sites only give proper responses when they are present.
             httpClient.DefaultRequestHeaders.Add(

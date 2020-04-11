@@ -24,7 +24,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(-1)]
         public void InvalidValue_ThrowsException(int invalidValue)
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             {
                 AssertExtensions.Throws<ArgumentOutOfRangeException>("value", () => handler.MaxResponseHeadersLength = invalidValue);
             }
@@ -37,7 +37,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(int.MaxValue)]
         public void ValidValue_SetGet_Roundtrips(int validValue)
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             {
                 handler.MaxResponseHeadersLength = validValue;
                 Assert.Equal(validValue, handler.MaxResponseHeadersLength);
@@ -49,7 +49,7 @@ namespace System.Net.Http.Functional.Tests
         {
             await LoopbackServerFactory.CreateClientAndServerAsync(async uri =>
             {
-                using HttpClientHandler handler = CreateHttpClientHandler();
+                using StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
                 using HttpClient client = CreateHttpClient(handler);
 
                 handler.MaxResponseHeadersLength = 1;
@@ -72,7 +72,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     Task<HttpResponseMessage> getAsync = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
@@ -118,7 +118,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     if (maxResponseHeadersLength.HasValue)

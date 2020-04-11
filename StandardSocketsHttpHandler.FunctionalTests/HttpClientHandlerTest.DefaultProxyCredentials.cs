@@ -23,7 +23,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void Default_Get_Null()
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             {
                 Assert.Null(handler.DefaultProxyCredentials);
             }
@@ -32,7 +32,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void SetGet_Roundtrips()
         {
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             {
                 var creds = new NetworkCredential("username", "password", "domain");
 
@@ -57,7 +57,7 @@ namespace System.Net.Http.Functional.Tests
 
             await LoopbackServer.CreateClientAndServerAsync(async proxyUrl =>
             {
-                using (HttpClientHandler handler = CreateHttpClientHandler())
+                using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
                 using (HttpClient client = CreateHttpClient(handler))
                 {
                     handler.Proxy = new UseSpecifiedUriWebProxy(proxyUrl, explicitProxyCreds);
@@ -80,53 +80,6 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-        [OuterLoop("Uses external server")]
-        [PlatformSpecific(TestPlatforms.AnyUnix)] // The default proxy is resolved via WinINet on Windows.
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ProxySetViaEnvironmentVariable_DefaultProxyCredentialsUsed(bool useProxy)
-        {
-            const string ExpectedUsername = "rightusername";
-            const string ExpectedPassword = "rightpassword";
-            LoopbackServer.Options options = new LoopbackServer.Options { IsProxy = true, Username = ExpectedUsername, Password = ExpectedPassword };
-
-            await LoopbackServer.CreateServerAsync(async (proxyServer, proxyUri) =>
-            {
-                // libcurl will read a default proxy from the http_proxy environment variable.  Ensure that when it does,
-                // our default proxy credentials are used.  To avoid messing up anything else in this process, we run the
-                // test in another process.
-                var psi = new ProcessStartInfo();
-                Task<List<string>> proxyTask = null;
-
-                if (useProxy)
-                {
-                    proxyTask = proxyServer.AcceptConnectionPerformAuthenticationAndCloseAsync("Proxy-Authenticate: Basic realm=\"NetCore\"\r\n");
-                    psi.Environment.Add("http_proxy", $"http://{proxyUri.Host}:{proxyUri.Port}");
-                }
-
-                RemoteExecutor.Invoke(async (useProxyString, useSocketsHttpHandlerString, useHttp2String) =>
-                {
-                    using (HttpClientHandler handler = CreateHttpClientHandler(useSocketsHttpHandlerString, useHttp2String))
-                    using (HttpClient client = CreateHttpClient(handler, useHttp2String))
-                    {
-                        var creds = new NetworkCredential(ExpectedUsername, ExpectedPassword);
-                        handler.DefaultProxyCredentials = creds;
-                        handler.UseProxy = bool.Parse(useProxyString);
-
-                        HttpResponseMessage response = await client.GetAsync(Configuration.Http.RemoteEchoServer);
-                        // Correctness of user and password is done in server part.
-                        Assert.True(response.StatusCode == HttpStatusCode.OK);
-                    }
-                    return RemoteExecutor.SuccessExitCode;
-                }, useProxy.ToString(), UseSocketsHttpHandler.ToString(), UseHttp2.ToString(), new RemoteInvokeOptions { StartInfo = psi }).Dispose();
-                if (useProxy)
-                {
-                    await proxyTask;
-                }
-            }, options);
-        }
-
         // The purpose of this test is mainly to validate the .NET Framework OOB System.Net.Http implementation
         // since it has an underlying dependency to WebRequest. While .NET Core implementations of System.Net.Http
         // are not using any WebRequest code, the test is still useful to validate correctness.
@@ -136,7 +89,7 @@ namespace System.Net.Http.Functional.Tests
         {
             WebRequest.DefaultWebProxy = null;
 
-            using (HttpClientHandler handler = CreateHttpClientHandler())
+            using (StandardSocketsHttpHandler handler = CreateSocketsHttpHandler())
             using (HttpClient client = CreateHttpClient(handler))
             {
                 handler.DefaultProxyCredentials = new NetworkCredential("UsernameNotUsed", "PasswordNotUsed");
