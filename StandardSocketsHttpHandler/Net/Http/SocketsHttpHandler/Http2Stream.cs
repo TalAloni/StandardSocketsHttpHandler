@@ -960,6 +960,7 @@ namespace System.Net.Http
 
             private void CopyTrailersToResponseMessage(HttpResponseMessage responseMessage)
             {
+#if !NETSTANDARD20
                 if (_trailers != null && _trailers.Count > 0)
                 {
                     foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
@@ -968,6 +969,7 @@ namespace System.Net.Http
                     }
                     _trailers.Clear();
                 }
+#endif
             }
 
             private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)

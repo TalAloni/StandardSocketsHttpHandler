@@ -956,7 +956,9 @@ namespace System.Net.Http
             // Request headers returned on the response must be treated as custom headers.
             if (isFromTrailer)
             {
+#if !NETSTANDARD20
                 response.TrailingHeaders.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader().Name : descriptor.Name, headerValue);
+#endif
             }
             else if (descriptor.HeaderType == HttpHeaderType.Content)
             {
