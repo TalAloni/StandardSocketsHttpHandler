@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
+    <Compile Remove="Extensions\MemoryExtensions.cs" />
     <Compile Remove="HashCode.cs" />
     <Compile Remove="Collections\Generic\Extensions\QueueExtensions.cs" />
     <Compile Remove="IO\Extensions\StreamExtensions.cs" />
