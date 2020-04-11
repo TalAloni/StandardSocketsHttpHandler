@@ -8,7 +8,8 @@ namespace System.Net.Http
     {
         public static bool HasHeaders(this HttpRequestMessage request)
         {
-            string headersFieldName = "_headers";
+            // Note: The field name is _headers in .NET core 
+            string headersFieldName = RuntimeUtils.IsDotNetFramework() ? "headers" : "_headers";
             FieldInfo headersField = typeof(HttpRequestMessage).GetField(headersFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             HttpRequestHeaders headers = (HttpRequestHeaders)headersField.GetValue(request);
             return headers != null;
