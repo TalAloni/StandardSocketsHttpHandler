@@ -134,7 +134,11 @@ namespace System.Net.Http
             {
                 using (Stream decompressedStream = await CreateContentReadStreamAsync().ConfigureAwait(false))
                 {
+#if NETSTANDARD20
+                    await decompressedStream.CopyToAsync(stream).ConfigureAwait(false);
+#else
                     await decompressedStream.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+#endif
                 }
             }
 
