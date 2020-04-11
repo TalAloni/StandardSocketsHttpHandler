@@ -39,7 +39,7 @@ namespace System.Net
         // We should accept a wide variety of common formats, but only output RFC 1123 style dates.
         internal static bool TryStringToDate(ReadOnlySpan<char> input, out DateTimeOffset result) =>
              DateTimeOffset.TryParseExact(
-                 input,
+                 new string(input.ToArray()),
                  s_dateFormats,
                  DateTimeFormatInfo.InvariantInfo,
                  DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeUniversal,
