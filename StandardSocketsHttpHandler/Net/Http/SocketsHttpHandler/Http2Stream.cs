@@ -512,7 +512,7 @@ namespace System.Net.Http
                         if (_responseProtocolState == ResponseProtocolState.ExpectingTrailingHeaders)
                         {
                             Debug.Assert(_trailers != null);
-                            _trailers.Add(KeyValuePair.Create(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader() : descriptor, headerValue));
+                            _trailers.Add(new KeyValuePair<HeaderDescriptor, string>(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader() : descriptor, headerValue));
                         }
                         else if (descriptor.HeaderType == HttpHeaderType.Content)
                         {
