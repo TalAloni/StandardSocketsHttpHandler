@@ -159,7 +159,7 @@ namespace System.Net.Http
 
         private static async ValueTask<SslStream> EstablishSslConnectionAsyncCore(Stream stream, SslClientAuthenticationOptions sslOptions, CancellationToken cancellationToken)
         {
-            SslStream sslStream = new SslStream(stream);
+            SslStream sslStream = new SslStream(stream, false, sslOptions.RemoteCertificateValidationCallback, sslOptions.LocalCertificateSelectionCallback, sslOptions.EncryptionPolicy);
 
             // TODO #25206 and #24430: Register/IsCancellationRequested should be removable once SslStream auth and sockets respect cancellation.
             CancellationTokenRegistration ctr = cancellationToken.Register(s => ((Stream)s).Dispose(), stream);
