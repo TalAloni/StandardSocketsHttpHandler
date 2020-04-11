@@ -34,8 +34,7 @@ namespace System.Net.Http.Headers
             _knownValues = knownValues;
 
             _asciiBytesWithColonSpace = new byte[name.Length + 2]; // + 2 for ':' and ' '
-            int asciiBytes = Encoding.ASCII.GetBytes(name, _asciiBytesWithColonSpace);
-            Debug.Assert(asciiBytes == name.Length);
+            Array.Copy(Encoding.ASCII.GetBytes(name), _asciiBytesWithColonSpace, name.Length);
             _asciiBytesWithColonSpace[_asciiBytesWithColonSpace.Length - 2] = (byte)':';
             _asciiBytesWithColonSpace[_asciiBytesWithColonSpace.Length - 1] = (byte)' ';
         }
