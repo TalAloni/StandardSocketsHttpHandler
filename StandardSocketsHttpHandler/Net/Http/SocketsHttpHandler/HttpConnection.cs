@@ -1685,7 +1685,11 @@ namespace System.Net.Http
                             if (desiredBufferSize > currentReadBuffer.Length)
                             {
                                 origReadBuffer = currentReadBuffer;
+#if NETSTANDARD20
+                                _readBuffer = new byte[desiredBufferSize];
+#else
                                 _readBuffer = ArrayPool<byte>.Shared.Rent(desiredBufferSize);
+#endif
                             }
                         }
                     }
@@ -1697,8 +1701,9 @@ namespace System.Net.Http
                 {
                     byte[] tmp = _readBuffer;
                     _readBuffer = origReadBuffer;
+#if !NETSTANDARD20
                     ArrayPool<byte>.Shared.Return(tmp);
-
+#endif
                     // _readOffset and _readLength may not be within range of the original
                     // buffer, and even if they are, they won't refer to read data at this
                     // point.  But we don't care what remaining data there was, other than
