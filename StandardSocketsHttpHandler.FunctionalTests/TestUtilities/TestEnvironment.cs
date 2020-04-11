@@ -11,13 +11,11 @@ namespace System
         /// <summary>
         /// Check if the stress mode is enabled.
         /// </summary>
-        /// <value> true if the environment variable COREFX_STRESS set to '1' or 'true'. returns false otherwise</value>
         public static bool IsStressModeEnabled
         {
             get
             {
-                string value = Environment.GetEnvironmentVariable("COREFX_STRESS");
-                return value != null && (value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase));
+                return true;
             }
         }
     }

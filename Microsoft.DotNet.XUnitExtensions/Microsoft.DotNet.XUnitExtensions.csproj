@@ -11,13 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit.extensibility.core" Version="$(XUnitVersion)" />
-    <PackageReference Include="xunit.extensibility.execution" Version="$(XUnitVersion)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(RepoRoot)LICENSE.txt" PackagePath="LICENSE.txt" Pack="true" />
-    <None Include="$(RepoRoot)THIRD-PARTY-NOTICES.txt" PackagePath="THIRD-PARTY-NOTICES.txt" Pack="true" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
+    <PackageReference Include="xunit.extensibility.execution" Version="2.4.1" />
   </ItemGroup>
 
 </Project>

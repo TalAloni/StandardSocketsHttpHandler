@@ -258,25 +258,5 @@ namespace System
                 return s_isInAppContainer == 1;
             }
         }
-
-        private static int s_isWindowsElevated = -1;
-        public static bool IsWindowsAndElevated
-        {
-            get
-            {
-                if (s_isWindowsElevated != -1)
-                    return s_isWindowsElevated == 1;
-
-                if (!IsWindows || IsInAppContainer)
-                {
-                    s_isWindowsElevated = 0;
-                    return false;
-                }
-
-                s_isWindowsElevated = AdminHelpers.IsProcessElevated() ? 1 : 0;
-
-                return s_isWindowsElevated == 1;
-            }
-        }
     }
 }

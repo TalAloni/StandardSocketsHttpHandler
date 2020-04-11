@@ -110,12 +110,6 @@ namespace System.Net.Http.Functional.Tests
         protected override bool UseSocketsHttpHandler => true;
     }
 
-    public sealed class SocketsHttpHandler_DiagnosticsTest : DiagnosticsTest
-    {
-        public SocketsHttpHandler_DiagnosticsTest(ITestOutputHelper output) : base(output) { }
-        protected override bool UseSocketsHttpHandler => true;
-    }
-
     public sealed class SocketsHttpHandler_HttpClient_SelectedSites_Test : HttpClient_SelectedSites_Test
     {
         public SocketsHttpHandler_HttpClient_SelectedSites_Test(ITestOutputHelper output) : base(output) { }
@@ -970,13 +964,6 @@ namespace System.Net.Http.Functional.Tests
     {
         public SocketsHttpHandler_DefaultCredentialsTest(ITestOutputHelper output) : base(output) { }
         protected override bool UseSocketsHttpHandler => true;
-    }
-
-    public sealed class SocketsHttpHandler_IdnaProtocolTests : IdnaProtocolTests
-    {
-        public SocketsHttpHandler_IdnaProtocolTests(ITestOutputHelper output) : base(output) { }
-        protected override bool UseSocketsHttpHandler => true;
-        protected override bool SupportsIdna => true;
     }
 
     public sealed class SocketsHttpHandler_HttpRetryProtocolTests : HttpRetryProtocolTests

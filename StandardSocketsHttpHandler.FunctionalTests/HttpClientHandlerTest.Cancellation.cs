@@ -4,7 +4,6 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.DirectoryServices.Protocols;
 using System.IO;
 using System.Linq;
 using System.Net.Test.Common;

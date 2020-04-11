@@ -16,7 +16,7 @@ namespace System.Net.Http.Functional.Tests
 {
     using Configuration = System.Net.Test.Common.Configuration;
 
-    public abstract class HttpClientHandlerTestBase : FileCleanupTestBase
+    public abstract class HttpClientHandlerTestBase
     {
         public readonly ITestOutputHelper _output;
 
