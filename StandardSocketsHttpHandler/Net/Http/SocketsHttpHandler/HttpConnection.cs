@@ -40,8 +40,8 @@ namespace System.Net.Http
         private static readonly byte[] s_spaceHttp11NewlineAsciiBytes = Encoding.ASCII.GetBytes(" HTTP/1.1\r\n");
         private static readonly byte[] s_httpSchemeAndDelimiter = Encoding.ASCII.GetBytes(Uri.UriSchemeHttp + Uri.SchemeDelimiter);
         private static readonly byte[] s_http1DotBytes = Encoding.ASCII.GetBytes("HTTP/1.");
-        private static readonly ulong s_http10Bytes = BitConverter.ToUInt64(Encoding.ASCII.GetBytes("HTTP/1.0"));
-        private static readonly ulong s_http11Bytes = BitConverter.ToUInt64(Encoding.ASCII.GetBytes("HTTP/1.1"));
+        private static readonly ulong s_http10Bytes = BitConverter.ToUInt64(Encoding.ASCII.GetBytes("HTTP/1.0"), 0);
+        private static readonly ulong s_http11Bytes = BitConverter.ToUInt64(Encoding.ASCII.GetBytes("HTTP/1.1"), 0);
         private static readonly HashSet<KnownHeader> s_disallowedTrailers = new HashSet<KnownHeader>    // rfc7230 4.1.2.
         {
             // Message framing headers.
@@ -825,7 +825,7 @@ namespace System.Net.Http
                 throw new HttpRequestException(String.Format(SR.net_http_invalid_response_status_line, Encoding.ASCII.GetString(line.ToArray())));
             }
 
-            ulong first8Bytes = BitConverter.ToUInt64(line.ToArray());
+            ulong first8Bytes = BitConverter.ToUInt64(line.ToArray(), 0);
             if (first8Bytes == s_http11Bytes)
             {
                 response.SetVersionWithoutValidation(HttpVersion.Version11);
