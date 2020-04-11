@@ -447,7 +447,7 @@ namespace System.Net.Http
                             int statusValue = (100 * (status1 - '0') + 10 * (status2 - '0') + (status3 - '0'));
                             _response = new HttpResponseMessage()
                             {
-                                Version = HttpVersion.Version20,
+                                Version = new Version(2, 0),
                                 RequestMessage = _request,
                                 Content = new HttpConnectionResponseContent(),
                                 StatusCode = (HttpStatusCode)statusValue

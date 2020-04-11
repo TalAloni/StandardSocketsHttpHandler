@@ -51,7 +51,7 @@ namespace System.Net.Http
         public HttpConnectionSettings()
         {
             bool allowHttp2 = AllowHttp2;
-            _maxHttpVersion = allowHttp2 ? HttpVersion.Version20 : HttpVersion.Version11;
+            _maxHttpVersion = allowHttp2 ? new Version(2, 0) : HttpVersion.Version11;
             _allowUnencryptedHttp2 = allowHttp2 && AllowUnencryptedHttp2;
         }
 
