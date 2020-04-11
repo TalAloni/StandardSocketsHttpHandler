@@ -113,7 +113,7 @@ namespace System.Net.Http.Headers
                 }
             }
 
-            return HttpRuleParser.DefaultHttpEncoding.GetString(headerValue);
+            return HttpRuleParser.DefaultHttpEncoding.GetString(headerValue.ToArray());
         }
     }
 }

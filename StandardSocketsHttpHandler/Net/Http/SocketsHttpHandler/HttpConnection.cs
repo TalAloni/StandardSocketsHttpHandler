@@ -818,7 +818,7 @@ namespace System.Net.Http
                 ThrowInvalidHttpResponse();
             }
 
-            ulong first8Bytes = BitConverter.ToUInt64(line);
+            ulong first8Bytes = BitConverter.ToUInt64(line.ToArray());
             if (first8Bytes == s_http11Bytes)
             {
                 response.SetVersionWithoutValidation(HttpVersion.Version11);
@@ -866,7 +866,7 @@ namespace System.Net.Http
                 {
                     try
                     {
-                        response.ReasonPhrase = HttpRuleParser.DefaultHttpEncoding.GetString(reasonBytes);
+                        response.ReasonPhrase = HttpRuleParser.DefaultHttpEncoding.GetString(reasonBytes.ToArray());
                     }
                     catch (FormatException error)
                     {
