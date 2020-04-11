@@ -2020,6 +2020,7 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
+#if !NET472
         [ConditionalFact(nameof(SupportsAlpn))]
         public async Task Http2_ProtocolMismatch_Throws()
         {
@@ -2055,6 +2056,7 @@ namespace System.Net.Http.Functional.Tests
                 });
             }
         }
+#endif
 
         // rfc7540 8.1.2.3.
         [ConditionalFact(nameof(SupportsAlpn))]

@@ -108,6 +108,7 @@ namespace System.Net.Http.Functional.Tests
                 new Func<Stream, Stream>(s => new DeflateStream(s, CompressionLevel.Optimal, leaveOpen: true)),
                 DecompressionMethods.None
             };
+#if !NET472
             yield return new object[]
             {
                 "gzip",
@@ -120,6 +121,7 @@ namespace System.Net.Http.Functional.Tests
                 new Func<Stream, Stream>(s => new BrotliStream(s, CompressionLevel.Optimal, leaveOpen: true)),
                 DecompressionMethods.Deflate | DecompressionMethods.GZip
             };
+#endif
         }
 
         [Theory]
