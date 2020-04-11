@@ -10,6 +10,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
     <Compile Remove="HashCode.cs" />
     <Compile Remove="IO\Extensions\StreamExtensions.cs" />
+    <Compile Remove="Net\Security\Extensions\SslStreamExtensions.cs" />
     <Compile Remove="Net\Security\SslApplicationProtocol.cs" />
     <Compile Remove="Net\Security\SslClientAuthenticationOptions.cs" />
   </ItemGroup>
