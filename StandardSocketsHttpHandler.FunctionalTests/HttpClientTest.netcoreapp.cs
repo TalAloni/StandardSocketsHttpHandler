@@ -11,6 +11,7 @@ namespace System.Net.Http.Functional.Tests
 {
     public sealed partial class HttpClientTest
     {
+#if !NET472
         [Fact]
         public void DefaultProxy_SetNull_Throws()
         {
@@ -149,6 +150,7 @@ namespace System.Net.Http.Functional.Tests
                 Assert.Same(version, handler.Message.Version);
             }
         }
+#endif
 
         private sealed class StoreMessageHttpMessageInvoker : HttpMessageHandler
         {
