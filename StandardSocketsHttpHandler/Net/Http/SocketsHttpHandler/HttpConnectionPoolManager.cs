@@ -82,7 +82,7 @@ namespace System.Net.Http
                 {
                     const int ScavengesPerIdle = 4;
                     const int MinScavengeSeconds = 1;
-                    TimeSpan timerPeriod = settings._pooledConnectionIdleTimeout / ScavengesPerIdle;
+                    TimeSpan timerPeriod = new TimeSpan(settings._pooledConnectionIdleTimeout.Ticks / ScavengesPerIdle);
                     _cleanPoolTimeout = timerPeriod.TotalSeconds >= MinScavengeSeconds ? timerPeriod : TimeSpan.FromSeconds(MinScavengeSeconds);
                 }
 
