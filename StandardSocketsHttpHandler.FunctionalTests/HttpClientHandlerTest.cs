@@ -1923,7 +1923,7 @@ namespace System.Net.Http.Functional.Tests
 #endif
         public async Task PostAsync_ExpectContinue_Success(bool? expectContinue, string version)
         {
-            using (HttpClient client = CreateHttpClient())
+            using (HttpClient client = CreateHttpClient(version == "2.0"))
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, version == "2.0" ? Configuration.Http.Http2RemoteEchoServer : Configuration.Http.RemoteEchoServer)
                 {

@@ -1621,9 +1621,11 @@ namespace System.Net.Http.Functional.Tests
                     default: throw new ArgumentOutOfRangeException(nameof(timeoutPropertyName));
                 }
 
-                using (HttpClient client = CreateHttpClient(handler))
+                using (HttpClient client = CreateHttpClient(handler, true))
                 {
+#if !NETFRAMEWORK
                     SetDefaultRequestVersion(client, new Version(2, 0));
+#endif
                     Task<string> request1 = client.GetStringAsync(url);
 
                     Http2LoopbackConnection connection = await server.EstablishConnectionAsync();

@@ -39,20 +39,43 @@ namespace System.Net.Http.Functional.Tests
 
         protected virtual HttpClient CreateHttpClient() => CreateHttpClient(CreateSocketsHttpHandler());
 
-        protected HttpClient CreateHttpClient(HttpMessageHandler handler)
+        protected HttpClient CreateHttpClient(StandardHttpMessageHandler handler)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                handler = new Http2MessageAdapter(handler);
+            }
+#endif
             var client = new HttpClient(handler);
+#if !NET472
             SetDefaultRequestVersion(client, VersionFromUseHttp2);
+#endif
             return client;
         }
 
         protected static HttpClient CreateHttpClient(string useHttp2String) =>
-            CreateHttpClient(CreateSocketsHttpHandler(useHttp2String), useHttp2String);
+            CreateHttpClient(bool.Parse(useHttp2String));
 
-        protected static HttpClient CreateHttpClient(HttpMessageHandler handler, string useHttp2String)
+        protected static HttpClient CreateHttpClient(bool useHttp2) =>
+            CreateHttpClient(CreateSocketsHttpHandler(useHttp2), useHttp2);
+
+        protected static HttpClient CreateHttpClient(StandardHttpMessageHandler handler, string useHttp2String) =>
+            CreateHttpClient(handler, bool.Parse(useHttp2String));
+
+        protected static HttpClient CreateHttpClient(StandardHttpMessageHandler handler, bool useHttp2)
         {
+#if NET472
+            if (useHttp2)
+            {
+                handler = new Http2MessageAdapter(handler);
+            }
+
             var client = new HttpClient(handler);
-            SetDefaultRequestVersion(client, GetVersion(bool.Parse(useHttp2String)));
+#else
+            var client = new HttpClient(handler);
+            SetDefaultRequestVersion(client, GetVersion(useHttp2));
+#endif
             return client;
         }
 
@@ -133,5 +156,27 @@ namespace System.Net.Http.Functional.Tests
                 return response;
             }
         }
+
+#if NET472
+        private class Http2MessageAdapter : StandardHttpMessageHandler
+        {
+            private StandardHttpMessageHandler m_handler;
+
+            public Http2MessageAdapter(StandardHttpMessageHandler handler)
+            {
+                m_handler = handler;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (request.Version == new Version(1, 1))
+                {
+                    request.Version = new Version(2, 0);
+                }
+
+                return m_handler.SendRequestAsync(request, cancellationToken);
+            }
+        }
+#endif
     }
 }
