@@ -233,6 +233,12 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(true)]
         public async Task SendAsync_GetWithValidHostHeader_Success(bool withPort)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             var m = new HttpRequestMessage(HttpMethod.Get, Configuration.Http.SecureRemoteEchoServer) { Version = VersionFromUseHttp2 };
             m.Headers.Host = withPort ? Configuration.Http.SecureHost + ":443" : Configuration.Http.SecureHost;
 
@@ -254,6 +260,12 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_GetWithInvalidHostHeader_ThrowsException()
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             if (PlatformDetection.IsNetCore && (!UseSocketsHttpHandler || UseHttp2))
             {
                 // Only .NET Framework and SocketsHttpHandler with HTTP/1.x use the Host header to influence the SSL auth.

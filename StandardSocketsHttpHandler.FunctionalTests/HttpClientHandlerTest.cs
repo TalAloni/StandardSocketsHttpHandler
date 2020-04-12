@@ -143,6 +143,12 @@ namespace System.Net.Http.Functional.Tests
         [OuterLoop("Uses external servers")]
         public async Task UseDefaultCredentials_SetToFalseAndServerNeedsAuth_StatusCodeUnauthorized(bool useProxy)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             StandardSocketsHttpHandler handler = CreateSocketsHttpHandler();
             handler.UseProxy = useProxy;
             using (HttpClient client = CreateHttpClient(handler))
@@ -531,6 +537,12 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void GetAsync_ServerNeedsAuthAndNoCredential_StatusCodeUnauthorized()
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
             // the same process as the other tests. Each test needs to be isolated to its own process.
             // See dicussion: https://github.com/dotnet/corefx/issues/21945
@@ -1257,6 +1269,12 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_ReadFromSlowStreamingServer_PartialDataReturned()
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
                 using (HttpClient client = CreateHttpClient())
@@ -1646,6 +1664,12 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_UnicodeHostName_SuccessStatusCodeInResponse()
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             using (HttpClient client = CreateHttpClient())
             {
                 // international version of the Starbucks website
@@ -1892,9 +1916,11 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(false, "1.1")]
         [InlineData(true, "1.1")]
         [InlineData(null, "1.1")]
+#if !NET472
         [InlineData(false, "2.0")]
         [InlineData(true, "2.0")]
         [InlineData(null, "2.0")]
+#endif
         public async Task PostAsync_ExpectContinue_Success(bool? expectContinue, string version)
         {
             using (HttpClient client = CreateHttpClient())
@@ -2327,6 +2353,12 @@ namespace System.Net.Http.Functional.Tests
         [ActiveIssue(31104, TestPlatforms.AnyUnix)]
         public async Task PostAsync_ReuseRequestContent_Success(Configuration.Http.RemoteServer remoteServer)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             const string ContentString = "This is the content string.";
             using (HttpClient client = CreateHttpClientForRemoteServer(remoteServer))
             {
@@ -2375,6 +2407,12 @@ namespace System.Net.Http.Functional.Tests
             string method,
             Uri serverUri)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             using (HttpClient client = CreateHttpClient())
             {
                 var request = new HttpRequestMessage(
@@ -2403,6 +2441,12 @@ namespace System.Net.Http.Functional.Tests
             string method,
             Uri serverUri)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             using (HttpClient client = CreateHttpClient())
             {
                 var request = new HttpRequestMessage(
@@ -2433,6 +2477,12 @@ namespace System.Net.Http.Functional.Tests
         [InlineData("12345678910", 5)]
         public async Task SendAsync_SendSameRequestMultipleTimesDirectlyOnHandler_Success(string stringContent, int startingPosition)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             using (var handler = new HttpMessageInvoker(CreateSocketsHttpHandler()))
             {
                 byte[] byteContent = Encoding.ASCII.GetBytes(stringContent);
@@ -2467,6 +2517,12 @@ namespace System.Net.Http.Functional.Tests
             string method,
             Uri serverUri)
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             if (PlatformDetection.IsUap && method == "TRACE")
             {
                 // UAP platform doesn't allow a content body with this HTTP verb.
@@ -2520,6 +2576,12 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_RequestVersion11_ServerReceivesVersion11Request()
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             Version receivedRequestVersion = await SendRequestAndGetRequestVersionAsync(new Version(1, 1));
             Assert.Equal(new Version(1, 1), receivedRequestVersion);
         }
@@ -2528,6 +2590,12 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_RequestVersionNotSpecified_ServerReceivesVersion11Request()
         {
+#if NET472
+            if (UseHttp2)
+            {
+                return;
+            }
+#endif
             // SocketsHttpHandler treats 0.0 as a bad version, and throws.
             if (UseSocketsHttpHandler)
             {
@@ -2540,6 +2608,7 @@ namespace System.Net.Http.Functional.Tests
             Assert.Equal(new Version(1, 1), receivedRequestVersion);
         }
 
+#if !NET472
         [OuterLoop("Uses external server")]
         [ConditionalTheory]
         [MemberData(nameof(Http2Servers))]
@@ -2570,6 +2639,7 @@ namespace System.Net.Http.Functional.Tests
                 }
             }
         }
+#endif
 
         [Fact]
         public async Task SendAsync_RequestVersion20_HttpNotHttps_NoUpgradeRequest()
@@ -2587,6 +2657,7 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
+#if !NET472
         [OuterLoop("Uses external server")]
         [ConditionalTheory(nameof(IsWindows10Version1607OrGreater)), MemberData(nameof(Http2NoPushServers))]
         public async Task SendAsync_RequestVersion20_ResponseVersion20(Uri server)
@@ -2604,6 +2675,7 @@ namespace System.Net.Http.Functional.Tests
                 }
             }
         }
+#endif
 
         private async Task<Version> SendRequestAndGetRequestVersionAsync(Version requestVersion)
         {
