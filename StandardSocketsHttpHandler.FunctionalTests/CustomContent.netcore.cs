@@ -31,14 +31,14 @@ namespace System.Net.Http.Functional.Tests
             {
                 var buffer = new byte[bufferSize];
                 int bytesRead;
-                while ((bytesRead = await ReadAsync(buffer, cancellationToken)) != 0)
+                while ((bytesRead = await ReadAsync(buffer, 0, bufferSize, cancellationToken)) != 0)
                 {
                     await destination.WriteAsync(buffer, 0, bytesRead, cancellationToken);
                     await destination.FlushAsync(); // some tests rely on data being written promptly to coordinate between client/server sides of test
                 }
             }
 
-            public async override ValueTask<int> ReadAsync(Memory<byte> destination, CancellationToken cancellationToken)
+            public async override Task<int> ReadAsync(byte[] destination, int offset, int count, CancellationToken cancellationToken)
             {
                 if (_failException != null)
                 {

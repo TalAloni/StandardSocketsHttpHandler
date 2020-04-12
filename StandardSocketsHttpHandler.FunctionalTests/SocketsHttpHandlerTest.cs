@@ -1278,13 +1278,21 @@ namespace System.Net.Http.Functional.Tests
                             clientStream.Write(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2);
                             Assert.Equal("!", await connection.ReadLineAsync());
 
+#if NET472
+                            clientStream.Write(new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)'\r', (byte)'\n' }, 0, 7);
+#else
                             clientStream.Write(new Span<byte>(new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)'\r', (byte)'\n' }));
+#endif
                             Assert.Equal("hello", await connection.ReadLineAsync());
 
                             await clientStream.WriteAsync(new byte[] { (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 7);
                             Assert.Equal("world", await connection.ReadLineAsync());
 
+#if NET472
+                            await clientStream.WriteAsync(new byte[] { (byte)'a', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 5);
+#else
                             await clientStream.WriteAsync(new Memory<byte>(new byte[] { (byte)'a', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 5));
+#endif
                             Assert.Equal("and", await connection.ReadLineAsync());
 
                             await Task.Factory.FromAsync(clientStream.BeginWrite, clientStream.EndWrite, new byte[] { (byte)'b', (byte)'e', (byte)'y', (byte)'o', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 8, null);
@@ -1302,13 +1310,21 @@ namespace System.Net.Http.Functional.Tests
                             Assert.Equal(1, clientStream.Read(buffer, 0, 1));
                             Assert.Equal((byte)'b', buffer[0]);
 
+#if NET472
+                            Assert.Equal(1, clientStream.Read(buffer, 0, 1));
+#else
                             Assert.Equal(1, clientStream.Read(new Span<byte>(buffer, 0, 1)));
+#endif
                             Assert.Equal((byte)'c', buffer[0]);
 
                             Assert.Equal(1, await clientStream.ReadAsync(buffer, 0, 1));
                             Assert.Equal((byte)'d', buffer[0]);
 
+#if NET472
+                            Assert.Equal(1, await clientStream.ReadAsync(buffer, 0, 1));
+#else
                             Assert.Equal(1, await clientStream.ReadAsync(new Memory<byte>(buffer, 0, 1)));
+#endif
                             Assert.Equal((byte)'e', buffer[0]);
 
                             Assert.Equal(1, await Task.Factory.FromAsync(clientStream.BeginRead, clientStream.EndRead, buffer, 0, 1, null));

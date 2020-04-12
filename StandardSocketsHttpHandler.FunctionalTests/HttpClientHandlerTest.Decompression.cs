@@ -194,7 +194,7 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [Theory]
-#if netcoreapp
+#if BROTLI
         [InlineData(DecompressionMethods.Brotli, "br", "")]
         [InlineData(DecompressionMethods.Brotli, "br", "br")]
         [InlineData(DecompressionMethods.Brotli, "br", "gzip")]

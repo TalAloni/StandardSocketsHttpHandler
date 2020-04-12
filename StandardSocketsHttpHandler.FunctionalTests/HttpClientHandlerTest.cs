@@ -1321,8 +1321,13 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Throws<NotSupportedException>(() => responseStream.Seek(0, SeekOrigin.Begin));
                         Assert.Throws<NotSupportedException>(() => responseStream.SetLength(0));
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new byte[1], 0, 1));
+#if NET472
+                        Assert.Throws<NotSupportedException>(() => responseStream.Write(new byte[1], 0, 1));
+                        Assert.Throws<NotSupportedException>(() => { responseStream.WriteAsync(new byte[1], 0, 1); });
+#else
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new Span<byte>(new byte[1])));
                         Assert.Throws<NotSupportedException>(() => { responseStream.WriteAsync(new Memory<byte>(new byte[1])); });
+#endif
                         Assert.Throws<NotSupportedException>(() => { responseStream.WriteAsync(new byte[1], 0, 1); });
                         Assert.Throws<NotSupportedException>(() => responseStream.WriteByte(1));
 
@@ -1374,13 +1379,21 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Equal(1, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, buffer, 0, 1, null));
                         Assert.Equal((byte)'e', buffer[0]);
 
+#if NET472
+                        Assert.Equal(1, await responseStream.ReadAsync(buffer, 0, 1));
+#else
                         Assert.Equal(1, await responseStream.ReadAsync(new Memory<byte>(buffer)));
+#endif
                         Assert.Equal((byte)'l', buffer[0]);
 
                         Assert.Equal(1, await responseStream.ReadAsync(buffer, 0, 1));
                         Assert.Equal((byte)'l', buffer[0]);
 
+#if NET472
+                        Assert.Equal(1, responseStream.Read(buffer, 0, 1));
+#else
                         Assert.Equal(1, responseStream.Read(new Span<byte>(buffer)));
+#endif
                         Assert.Equal((byte)'o', buffer[0]);
 
                         Assert.Equal(1, responseStream.Read(buffer, 0, 1));
@@ -1390,9 +1403,13 @@ namespace System.Net.Http.Functional.Tests
                         {
                             // Doing any of these 0-byte reads causes the connection to fail.
                             Assert.Equal(0, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, Array.Empty<byte>(), 0, 0, null));
+#if !NET472
                             Assert.Equal(0, await responseStream.ReadAsync(Memory<byte>.Empty));
+#endif
                             Assert.Equal(0, await responseStream.ReadAsync(Array.Empty<byte>(), 0, 0));
+#if !NET472
                             Assert.Equal(0, responseStream.Read(Span<byte>.Empty));
+#endif
                             Assert.Equal(0, responseStream.Read(Array.Empty<byte>(), 0, 0));
                         }
 
@@ -1408,9 +1425,17 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Equal(0, ms.Length);
                         Assert.Equal(-1, responseStream.ReadByte());
                         Assert.Equal(0, responseStream.Read(buffer, 0, 1));
+#if NET472
+                        Assert.Equal(0, responseStream.Read(buffer, 0, 1));
+#else
                         Assert.Equal(0, responseStream.Read(new Span<byte>(buffer)));
+#endif
                         Assert.Equal(0, await responseStream.ReadAsync(buffer, 0, 1));
+#if NET472
+                        Assert.Equal(0, await responseStream.ReadAsync(buffer, 0, 1));
+#else
                         Assert.Equal(0, await responseStream.ReadAsync(new Memory<byte>(buffer)));
+#endif
                         Assert.Equal(0, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, buffer, 0, 1, null));
                     }
                 }
@@ -1465,8 +1490,10 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Throws<NotSupportedException>(() => responseStream.Seek(0, SeekOrigin.Begin));
                         Assert.Throws<NotSupportedException>(() => responseStream.SetLength(0));
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new byte[1], 0, 1));
+#if !NET472
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new Span<byte>(new byte[1])));
                         await Assert.ThrowsAsync<NotSupportedException>(async () => await responseStream.WriteAsync(new Memory<byte>(new byte[1])));
+#endif
                         await Assert.ThrowsAsync<NotSupportedException>(async () => await responseStream.WriteAsync(new byte[1], 0, 1));
                         Assert.Throws<NotSupportedException>(() => responseStream.WriteByte(1));
 
@@ -1507,9 +1534,13 @@ namespace System.Net.Http.Functional.Tests
                         var buffer = new byte[1];
                         Assert.Equal(-1, responseStream.ReadByte());
                         Assert.Equal(0, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, buffer, 0, 1, null));
+#if !NET472
                         Assert.Equal(0, await responseStream.ReadAsync(new Memory<byte>(buffer)));
+#endif
                         Assert.Equal(0, await responseStream.ReadAsync(buffer, 0, 1));
+#if !NET472
                         Assert.Equal(0, responseStream.Read(new Span<byte>(buffer)));
+#endif
                         Assert.Equal(0, responseStream.Read(buffer, 0, 1));
 
                         // Empty copies
