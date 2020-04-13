@@ -21,7 +21,13 @@ namespace System.Net.Http
                 _contentBytesRemaining = contentLength;
             }
 
-            public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                ValidateBufferArgs(buffer, offset, count);
+                return ReadAsyncInternal(new Memory<byte>(buffer, offset, count), cancellationToken);
+            }
+
+            private async Task<int> ReadAsyncInternal(Memory<byte> buffer, CancellationToken cancellationToken)
             {
                 CancellationHelper.ThrowIfCancellationRequested(cancellationToken);
 
@@ -38,9 +44,9 @@ namespace System.Net.Http
                     buffer = buffer.Slice(0, (int)_contentBytesRemaining);
                 }
 
-                ValueTask<int> readTask = _connection.ReadAsync(buffer);
+                Task<int> readTask = _connection.ReadAsync(buffer);
                 int bytesRead;
-                if (readTask.IsCompletedSuccessfully)
+                if (readTask.IsCompletedSuccessfully())
                 {
                     bytesRead = readTask.Result;
                 }
@@ -198,7 +204,10 @@ namespace System.Net.Http
                             // (e.g. if a timer is used and has already queued its callback but the
                             // callback hasn't yet run).
                             ctr.Dispose();
-                            CancellationHelper.ThrowIfCancellationRequested(ctr.Token);
+                            if (cts != null)
+                            {
+                                CancellationHelper.ThrowIfCancellationRequested(cts.Token);
+                            }
 
                             Finish();
                             return true;

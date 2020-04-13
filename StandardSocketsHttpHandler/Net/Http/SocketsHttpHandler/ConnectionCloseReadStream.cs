@@ -16,7 +16,13 @@ namespace System.Net.Http
             {
             }
 
-            public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                ValidateBufferArgs(buffer, offset, count);
+                return ReadAsyncInternal(new Memory<byte>(buffer, offset, count), cancellationToken);
+            }
+
+            private async Task<int> ReadAsyncInternal(Memory<byte> buffer, CancellationToken cancellationToken)
             {
                 CancellationHelper.ThrowIfCancellationRequested(cancellationToken);
 
@@ -26,9 +32,9 @@ namespace System.Net.Http
                     return 0;
                 }
 
-                ValueTask<int> readTask = _connection.ReadAsync(buffer);
+                Task<int> readTask = _connection.ReadAsync(buffer);
                 int bytesRead;
-                if (readTask.IsCompletedSuccessfully)
+                if (readTask.IsCompletedSuccessfully())
                 {
                     bytesRead = readTask.Result;
                 }

@@ -29,14 +29,14 @@ namespace System.Net.Http
             // here are those that are already covered by the token having been registered with
             // to close the connection.
 
-            public sealed override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken ignored)
+            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken ignored)
             {
                 ValidateBufferArgs(buffer, offset, count);
-                return WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), ignored).AsTask();
+                return base.WriteAsync(buffer, offset, count, ignored);
             }
 
             public sealed override Task FlushAsync(CancellationToken ignored) =>
-                _connection.FlushAsync().AsTask();
+                _connection.FlushAsync();
 
             public abstract Task FinishAsync();
         }

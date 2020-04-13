@@ -37,7 +37,7 @@ namespace System.Net.Http
             }
         }
 
-        public static async ValueTask<(Socket, Stream)> ConnectAsync(string host, int port, CancellationToken cancellationToken)
+        public static async Task<(Socket, Stream)> ConnectAsync(string host, int port, CancellationToken cancellationToken)
         {
             // Rather than creating a new Socket and calling ConnectAsync on it, we use the static
             // Socket.ConnectAsync with a SocketAsyncEventArgs, as we can then use Socket.CancelConnectAsync
@@ -139,7 +139,7 @@ namespace System.Net.Http
             }
         }
 
-        public static ValueTask<SslStream> EstablishSslConnectionAsync(SslClientAuthenticationOptions sslOptions, HttpRequestMessage request, Stream stream, CancellationToken cancellationToken)
+        public static Task<SslStream> EstablishSslConnectionAsync(SslClientAuthenticationOptions sslOptions, HttpRequestMessage request, Stream stream, CancellationToken cancellationToken)
         {
             // If there's a cert validation callback, and if it came from HttpClientHandler,
             // wrap the original delegate in order to change the sender to be the request message (expected by HttpClientHandler's delegate).
@@ -157,7 +157,7 @@ namespace System.Net.Http
             return EstablishSslConnectionAsyncCore(stream, sslOptions, cancellationToken);
         }
 
-        private static async ValueTask<SslStream> EstablishSslConnectionAsyncCore(Stream stream, SslClientAuthenticationOptions sslOptions, CancellationToken cancellationToken)
+        private static async Task<SslStream> EstablishSslConnectionAsyncCore(Stream stream, SslClientAuthenticationOptions sslOptions, CancellationToken cancellationToken)
         {
             SslStream sslStream = new SslStream(stream, false, sslOptions.RemoteCertificateValidationCallback, sslOptions.LocalCertificateSelectionCallback, sslOptions.EncryptionPolicy);
 

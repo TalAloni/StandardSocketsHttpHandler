@@ -16,7 +16,13 @@ namespace System.Net.Http
             {
             }
 
-            public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                ValidateBufferArgs(buffer, offset, count);
+                return ReadAsyncInternal(new Memory<byte>(buffer, offset, count), cancellationToken);
+            }
+
+            private async Task<int> ReadAsyncInternal(Memory<byte> buffer, CancellationToken cancellationToken)
             {
                 CancellationHelper.ThrowIfCancellationRequested(cancellationToken);
 
@@ -26,9 +32,9 @@ namespace System.Net.Http
                     return 0;
                 }
 
-                ValueTask<int> readTask = _connection.ReadBufferedAsync(buffer);
+                Task<int> readTask = _connection.ReadBufferedAsync(buffer);
                 int bytesRead;
-                if (readTask.IsCompletedSuccessfully)
+                if (readTask.IsCompletedSuccessfully())
                 {
                     bytesRead = readTask.Result;
                 }
@@ -120,16 +126,21 @@ namespace System.Net.Http
                 _connection = null;
             }
 
-            public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
+            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                return WriteAsyncInternal(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken);
+            }
+
+            private Task WriteAsyncInternal(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    return new ValueTask(Task.FromCanceled(cancellationToken));
+                    return Task.FromCanceled(cancellationToken);
                 }
 
                 if (_connection == null)
                 {
-                    return new ValueTask(Task.FromException(new IOException(SR.net_http_io_write)));
+                    return Task.FromException(new IOException(SR.net_http_io_write));
                 }
 
                 if (buffer.Length == 0)
@@ -137,10 +148,10 @@ namespace System.Net.Http
                     return default;
                 }
 
-                ValueTask writeTask = _connection.WriteWithoutBufferingAsync(buffer);
+                Task writeTask = _connection.WriteWithoutBufferingAsync(buffer);
                 return writeTask.IsCompleted ?
                     writeTask :
-                    new ValueTask(WaitWithConnectionCancellationAsync(writeTask, cancellationToken));
+                    WaitWithConnectionCancellationAsync(writeTask, cancellationToken);
             }
 
             public override Task FlushAsync(CancellationToken cancellationToken)
@@ -155,13 +166,13 @@ namespace System.Net.Http
                     return Task.CompletedTask;
                 }
 
-                ValueTask flushTask = _connection.FlushAsync();
+                Task flushTask = _connection.FlushAsync();
                 return flushTask.IsCompleted ?
-                    flushTask.AsTask() :
+                    flushTask :
                     WaitWithConnectionCancellationAsync(flushTask, cancellationToken);
             }
 
-            private async Task WaitWithConnectionCancellationAsync(ValueTask task, CancellationToken cancellationToken)
+            private async Task WaitWithConnectionCancellationAsync(Task task, CancellationToken cancellationToken)
             {
                 CancellationTokenRegistration ctr = _connection.RegisterCancellation(cancellationToken);
                 try

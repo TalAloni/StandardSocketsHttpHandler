@@ -53,7 +53,7 @@ namespace System.Net.Http
         private int _writeOffset;
         private int _allowedReadLineBytes;
 
-        private ValueTask<int>? _readAheadTask;
+        private Task<int> _readAheadTask;
         private int _readAheadTaskLock = 0; // 0 == free, 1 == held
         private byte[] _readBuffer;
         private int _readOffset;
@@ -120,17 +120,17 @@ namespace System.Net.Http
 
                     // Eat any exceptions from the read-ahead task.  We don't need to log, as we expect
                     // failures from this task due to closing the connection while a read is in progress.
-                    ValueTask<int>? readAheadTask = ConsumeReadAheadTask();
+                    Task<int> readAheadTask = ConsumeReadAheadTask();
                     if (readAheadTask != null)
                     {
-                        IgnoreExceptionsAsync(readAheadTask.GetValueOrDefault());
+                        IgnoreExceptionsAsync(readAheadTask);
                     }
                 }
             }
         }
 
         /// <summary>Awaits a task, ignoring any resulting exceptions.</summary>
-        private static async void IgnoreExceptionsAsync(ValueTask<int> task)
+        private static async void IgnoreExceptionsAsync(Task<int> task)
         {
             try { await task.ConfigureAwait(false); } catch { }
         }
@@ -169,7 +169,7 @@ namespace System.Net.Http
                 Debug.Assert(_readAheadTask == null || _socket == null, "Should only already have a read-ahead task if we don't have a socket to poll");
                 if (_readAheadTask == null)
                 {
-                    _readAheadTask = _stream.ReadAsync(new Memory<byte>(_readBuffer));
+                    _readAheadTask = _stream.ReadAsync(_readBuffer, 0, _readBuffer.Length);
                 }
             }
             catch (Exception error)
@@ -177,17 +177,17 @@ namespace System.Net.Http
                 // If reading throws, eat the error and don't pool the connection.
                 if (NetEventSource.IsEnabled) Trace($"Error performing read ahead: {error}");
                 Dispose();
-                _readAheadTask = new ValueTask<int>(0);
+                _readAheadTask = Task.FromResult<int>(0);
             }
 
-            return _readAheadTask.Value.IsCompleted; // equivalent to polling
+            return _readAheadTask.IsCompleted; // equivalent to polling
         }
 
-        private ValueTask<int>? ConsumeReadAheadTask()
+        private Task<int> ConsumeReadAheadTask()
         {
             if (Interlocked.CompareExchange(ref _readAheadTaskLock, 1, 0) == 0)
             {
-                ValueTask<int>? t = _readAheadTask;
+                Task<int> t = _readAheadTask;
                 _readAheadTask = null;
                 Volatile.Write(ref _readAheadTaskLock, 0);
                 return t;
@@ -505,10 +505,10 @@ namespace System.Net.Http
 
                 // When the connection was taken out of the pool, a pre-emptive read was performed
                 // into the read buffer. We need to consume that read prior to issuing another read.
-                ValueTask<int>? t = ConsumeReadAheadTask();
+                Task<int> t = ConsumeReadAheadTask();
                 if (t != null)
                 {
-                    int bytesRead = await t.GetValueOrDefault().ConfigureAwait(false);
+                    int bytesRead = await t.ConfigureAwait(false);
                     if (NetEventSource.IsEnabled) Trace($"Received {bytesRead} bytes.");
 
                     if (bytesRead == 0)
@@ -991,7 +991,7 @@ namespace System.Net.Http
             }
         }
 
-        private ValueTask WriteWithoutBufferingAsync(ReadOnlyMemory<byte> source)
+        private Task WriteWithoutBufferingAsync(ReadOnlyMemory<byte> source)
         {
             if (_writeOffset == 0)
             {
@@ -1013,7 +1013,7 @@ namespace System.Net.Http
 
             // There's data in the write buffer and the data we're writing doesn't fit after it.
             // Do two writes, one to flush the buffer and then another to write the supplied content.
-            return new ValueTask(FlushThenWriteWithoutBufferingAsync(source));
+            return FlushThenWriteWithoutBufferingAsync(source);
         }
 
         private async Task FlushThenWriteWithoutBufferingAsync(ReadOnlyMemory<byte> source)
@@ -1153,21 +1153,25 @@ namespace System.Net.Http
             }
         }
 
-        private ValueTask FlushAsync()
+        private Task FlushAsync()
         {
             if (_writeOffset > 0)
             {
-                ValueTask t = WriteToStreamAsync(new ReadOnlyMemory<byte>(_writeBuffer, 0, _writeOffset));
+                Task t = WriteToStreamAsync(new ReadOnlyMemory<byte>(_writeBuffer, 0, _writeOffset));
                 _writeOffset = 0;
                 return t;
             }
-            return default;
+            return Task.CompletedTask;
         }
 
-        private ValueTask WriteToStreamAsync(ReadOnlyMemory<byte> source)
+        private Task WriteToStreamAsync(ReadOnlyMemory<byte> source)
         {
             if (NetEventSource.IsEnabled) Trace($"Writing {source.Length} bytes.");
+#if NETSTANDARD20
             return _stream.WriteAsync(source);
+#else
+            return _stream.WriteAsync(source).AsTask();
+#endif
         }
 
         private bool TryReadNextLine(out ReadOnlySpan<byte> line)
@@ -1194,7 +1198,7 @@ namespace System.Net.Http
             return true;
         }
 
-        private async ValueTask<ArraySegment<byte>> ReadNextResponseHeaderLineAsync(bool foldedHeadersAllowed = false)
+        private async Task<ArraySegment<byte>> ReadNextResponseHeaderLineAsync(bool foldedHeadersAllowed = false)
         {
             int previouslyScannedBytes = 0;
             while (true)
@@ -1329,7 +1333,7 @@ namespace System.Net.Http
                 _readLength = remaining;
             }
 
-            int bytesRead = await _stream.ReadAsync(new Memory<byte>(_readBuffer, _readLength, _readBuffer.Length - _readLength)).ConfigureAwait(false);
+            int bytesRead = await _stream.ReadAsync(_readBuffer, _readLength, _readBuffer.Length - _readLength).ConfigureAwait(false);
 
             if (NetEventSource.IsEnabled) Trace($"Received {bytesRead} bytes.");
             if (bytesRead == 0)
@@ -1348,7 +1352,7 @@ namespace System.Net.Http
             _readOffset += buffer.Length;
         }
 
-        private async ValueTask<int> ReadAsync(Memory<byte> destination)
+        private async Task<int> ReadAsync(Memory<byte> destination)
         {
             // This is called when reading the response body.
 
@@ -1376,7 +1380,7 @@ namespace System.Net.Http
             return count;
         }
 
-        private ValueTask<int> ReadBufferedAsync(Memory<byte> destination)
+        private Task<int> ReadBufferedAsync(Memory<byte> destination)
         {
             // If the caller provided buffer, and thus the amount of data desired to be read,
             // is larger than the internal buffer, there's no point going through the internal
@@ -1386,7 +1390,7 @@ namespace System.Net.Http
                 ReadBufferedAsyncCore(destination);
         }
 
-        private async ValueTask<int> ReadBufferedAsyncCore(Memory<byte> destination)
+        private async Task<int> ReadBufferedAsyncCore(Memory<byte> destination)
         {
             // This is called when reading the response body.
 
@@ -1427,7 +1431,7 @@ namespace System.Net.Http
             Debug.Assert(count <= _readLength - _readOffset);
 
             if (NetEventSource.IsEnabled) Trace($"Copying {count} bytes to stream.");
-            await destination.WriteAsync(new ReadOnlyMemory<byte>(_readBuffer, _readOffset, count), cancellationToken).ConfigureAwait(false);
+            await destination.WriteAsync(_readBuffer, _readOffset, count, cancellationToken).ConfigureAwait(false);
             _readOffset += count;
         }
 

@@ -18,7 +18,12 @@ namespace System.Net.Http
             {
             }
 
-            public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ignored)
+            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken ignored)
+            {
+                return WriteAsyncInternal(new ReadOnlyMemory<byte>(buffer, offset, count), ignored);
+            }
+
+            private Task WriteAsyncInternal(ReadOnlyMemory<byte> buffer, CancellationToken ignored)
             {
                 Debug.Assert(_connection._currentRequest != null);
 
@@ -26,11 +31,11 @@ namespace System.Net.Http
                 // here are those that are already covered by the token having been registered with
                 // to close the connection.
 
-                ValueTask task = buffer.Length == 0 ?
+                Task task = buffer.Length == 0 ?
                     // Don't write if nothing was given, especially since we don't want to accidentally send a 0 chunk,
                     // which would indicate end of body.  Instead, just ensure no content is stuck in the buffer.
                     _connection.FlushAsync() :
-                    new ValueTask(WriteChunkAsync(buffer));
+                    WriteChunkAsync(buffer);
 
                 return task;
             }

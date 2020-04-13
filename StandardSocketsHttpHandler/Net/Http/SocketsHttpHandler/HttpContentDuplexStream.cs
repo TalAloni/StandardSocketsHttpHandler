@@ -23,28 +23,25 @@ namespace System.Net.Http
         public sealed override int Read(byte[] buffer, int offset, int count)
         {
             ValidateBufferArgs(buffer, offset, count);
-            return ReadAsync(new Memory<byte>(buffer, offset, count), CancellationToken.None).GetAwaiter().GetResult();
+            return ReadAsync(buffer, offset, count, CancellationToken.None).GetAwaiter().GetResult();
         }
 
-        public sealed override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             ValidateBufferArgs(buffer, offset, count);
-            return ReadAsync(new Memory<byte>(buffer, offset, count), cancellationToken).AsTask();
+            return base.ReadAsync(buffer, offset, count, cancellationToken);
         }
 
         public sealed override void Write(byte[] buffer, int offset, int count)
         {
             ValidateBufferArgs(buffer, offset, count);
-            WriteAsync(new Memory<byte>(buffer, offset, count), CancellationToken.None).GetAwaiter().GetResult();
+            WriteAsync(buffer, offset, count, CancellationToken.None).GetAwaiter().GetResult();
         }
 
-        public sealed override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             ValidateBufferArgs(buffer, offset, count);
-            return WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken).AsTask();
+            return base.WriteAsync(buffer, offset, count, cancellationToken);
         }
-
-        public sealed override void CopyTo(Stream destination, int bufferSize) =>
-            CopyToAsync(destination, bufferSize, CancellationToken.None).GetAwaiter().GetResult();
     }
 }
