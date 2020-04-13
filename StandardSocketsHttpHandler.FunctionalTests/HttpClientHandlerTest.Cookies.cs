@@ -624,7 +624,7 @@ namespace System.Net.Http.Functional.Tests
                 yield return new object[] { "ABC", "123", useCookies };
                 yield return new object[] { "Hello", "World", useCookies };
                 yield return new object[] { "foo", "bar", useCookies };
-                yield return new object[] { "Hello World", "value", useCookies };
+                yield return new object[] { "Hello+World", "value", useCookies };
                 yield return new object[] { ".AspNetCore.Session", "RAExEmXpoCbueP_QYM", useCookies };
 
                 yield return new object[]

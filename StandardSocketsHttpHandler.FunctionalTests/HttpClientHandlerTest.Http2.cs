@@ -1981,6 +1981,11 @@ namespace System.Net.Http.Functional.Tests
             int sent = 0;
             var stream = new DelegateStream(
                 canReadFunc: () => true,
+                readFunc: (buffer, offset, count) =>
+                {
+                    waitToSendRequestBody.Task.Wait();
+                    return sent++ < 10 ? 1 : 0;
+                },
                 readAsyncFunc: async (buffer, offset, count, token) =>
                 {
                     await waitToSendRequestBody.Task;
