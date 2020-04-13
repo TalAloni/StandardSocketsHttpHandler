@@ -16,7 +16,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.DotNet.XUnitExtensions;
-using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -535,7 +534,7 @@ namespace System.Net.Http.Functional.Tests
 
         [OuterLoop("Uses external server")]
         [Fact]
-        public void GetAsync_ServerNeedsAuthAndNoCredential_StatusCodeUnauthorized()
+        public async void GetAsync_ServerNeedsAuthAndNoCredential_StatusCodeUnauthorized()
         {
 #if NETFRAMEWORK
             if (UseHttp2)
@@ -543,22 +542,14 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 #endif
-            // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-            // the same process as the other tests. Each test needs to be isolated to its own process.
-            // See dicussion: https://github.com/dotnet/corefx/issues/21945
-            RemoteExecutor.Invoke(async (useHttp2String) =>
+            using (HttpClient client = CreateHttpClient())
             {
-                using (HttpClient client = CreateHttpClient(useHttp2String))
+                Uri uri = Configuration.Http.RemoteHttp11Server.BasicAuthUriForCreds(userName: Username, password: Password);
+                using (HttpResponseMessage response = await client.GetAsync(uri))
                 {
-                    Uri uri = Configuration.Http.RemoteHttp11Server.BasicAuthUriForCreds(userName: Username, password: Password);
-                    using (HttpResponseMessage response = await client.GetAsync(uri))
-                    {
-                        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-                    }
-
-                    return RemoteExecutor.SuccessExitCode;
+                    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
                 }
-            }, UseHttp2.ToString()).Dispose();
+            }
         }
 
         [Theory]

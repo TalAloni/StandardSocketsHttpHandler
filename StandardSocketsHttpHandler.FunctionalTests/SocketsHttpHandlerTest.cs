@@ -15,7 +15,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -1649,50 +1648,6 @@ namespace System.Net.Http.Functional.Tests
                     socket.Close();
                 }
             });
-        }
-
-        [OuterLoop]
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void ConnectionsPooledThenDisposed_NoUnobservedTaskExceptions(bool secure)
-        {
-            RemoteExecutor.Invoke(async (secureString, useHttp2String) =>
-            {
-                var releaseServer = new TaskCompletionSource<bool>();
-                await LoopbackServer.CreateClientAndServerAsync(async uri =>
-                {
-                    using (var handler = new StandardSocketsHttpHandler())
-                    using (HttpClient client = CreateHttpClient(handler, useHttp2String))
-                    {
-                        handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-                        handler.PooledConnectionLifetime = TimeSpan.FromMilliseconds(1);
-
-                        var exceptions = new List<Exception>();
-                        TaskScheduler.UnobservedTaskException += (s, e) => exceptions.Add(e.Exception);
-
-                        await client.GetStringAsync(uri);
-                        await Task.Delay(10); // any value >= the lifetime
-                        Task ignored = client.GetStringAsync(uri); // force the pool to look for the previous connection and find it's too old
-                        await Task.Delay(100); // give some time for the connection close to fail pending reads
-
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-
-                        // Note that there are race conditions here such that we may not catch every failure,
-                        // and thus could have some false negatives, but there won't be any false positives.
-                        Assert.True(exceptions.Count == 0, string.Concat(exceptions));
-
-                        releaseServer.SetResult(true);
-                    }
-                }, server => server.AcceptConnectionAsync(async connection =>
-                {
-                    await connection.ReadRequestHeaderAndSendResponseAsync(content: "hello world");
-                    await releaseServer.Task;
-                }),
-                new LoopbackServer.Options { UseSsl = bool.Parse(secureString) });
-                return RemoteExecutor.SuccessExitCode;
-            }, secure.ToString(), UseHttp2.ToString()).Dispose();
         }
 
         [OuterLoop]

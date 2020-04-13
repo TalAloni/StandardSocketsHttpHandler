@@ -12,7 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Microsoft.DotNet.RemoteExecutor\Microsoft.DotNet.RemoteExecutor.csproj" />
     <ProjectReference Include="..\Microsoft.DotNet.XUnitExtensions\Microsoft.DotNet.XUnitExtensions.csproj" />
     <ProjectReference Include="..\StandardSocketsHttpHandler\StandardSocketsHttpHandler.csproj" />
   </ItemGroup>

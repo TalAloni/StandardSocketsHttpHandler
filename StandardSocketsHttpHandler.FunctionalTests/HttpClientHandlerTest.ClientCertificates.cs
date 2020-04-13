@@ -9,7 +9,6 @@ using System.Net.Test.Common;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -65,58 +64,50 @@ namespace System.Net.Http.Functional.Tests
                 return;
             }
 
-            // UAP HTTP stack caches connections per-process. This causes interference when these tests run in
-            // the same process as the other tests. Each test needs to be isolated to its own process.
-            // See dicussion: https://github.com/dotnet/corefx/issues/21945
-            RemoteExecutor.Invoke((certIndexString, expectedStatusCodeString, useSocketsHttpHandlerString, useHttp2String) =>
+            X509Certificate2 clientCert = null;
+
+            // Get client certificate. RemoteInvoke doesn't allow easy marshaling of complex types.
+            // So we have to select the certificate at this point in the test execution.
+            if (certIndex == 1)
             {
-                X509Certificate2 clientCert = null;
+                // This is a valid client cert since it has an EKU with a ClientAuthentication OID.
+                clientCert = Configuration.Certificates.GetClientCertificate();
+            }
+            else if (certIndex == 2)
+            {
+                // This is a valid client cert since it has no EKU thus all usages are permitted.
+                clientCert = Configuration.Certificates.GetNoEKUCertificate();
+            }
+            else if (certIndex == 3)
+            {
+                // This is an invalid client cert since it has an EKU but is missing ClientAuthentication OID.
+                clientCert = Configuration.Certificates.GetServerCertificate();
+            }
 
-                // Get client certificate. RemoteInvoke doesn't allow easy marshaling of complex types.
-                // So we have to select the certificate at this point in the test execution.
-                if (certIndexString == "1")
+            Assert.NotNull(clientCert);
+
+            var statusCode = expectedStatusCode;
+            StandardSocketsHttpHandler handler = CreateSocketsHttpHandler(UseHttp2);
+            handler.SslOptions.ClientCertificates = new X509CertificateCollection();
+            handler.SslOptions.ClientCertificates.Add(clientCert);
+            using (HttpClient client = CreateHttpClient(handler, UseHttp2))
+            {
+                var request = new HttpRequestMessage();
+                request.RequestUri = new Uri(Configuration.Http.EchoClientCertificateRemoteServer);
+
+                // Issue #35239. Force HTTP/1.1.
+                request.Version = new Version(1, 1);
+                HttpResponseMessage response = client.SendAsync(request).GetAwaiter().GetResult(); // need a 4-arg overload of RemoteInvoke that returns a Task
+                Assert.Equal(statusCode, response.StatusCode);
+
+                if (statusCode == HttpStatusCode.OK)
                 {
-                    // This is a valid client cert since it has an EKU with a ClientAuthentication OID.
-                    clientCert = Configuration.Certificates.GetClientCertificate();
+                    string body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult(); // need a 4-arg overload of RemoteInvoke that returns a Task
+                    byte[] bytes = Convert.FromBase64String(body);
+                    var receivedCert = new X509Certificate2(bytes);
+                    Assert.Equal(clientCert, receivedCert);
                 }
-                else if (certIndexString == "2")
-                {
-                    // This is a valid client cert since it has no EKU thus all usages are permitted.
-                    clientCert = Configuration.Certificates.GetNoEKUCertificate();
-                }
-                else if (certIndexString == "3")
-                {
-                    // This is an invalid client cert since it has an EKU but is missing ClientAuthentication OID.
-                    clientCert = Configuration.Certificates.GetServerCertificate();
-                }
-
-                Assert.NotNull(clientCert);
-
-                var statusCode = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), expectedStatusCodeString);
-                StandardSocketsHttpHandler handler = CreateSocketsHttpHandler(useHttp2String);
-                handler.SslOptions.ClientCertificates = new X509CertificateCollection();
-                handler.SslOptions.ClientCertificates.Add(clientCert);
-                using (HttpClient client = CreateHttpClient(handler, useHttp2String))
-                {
-                    var request = new HttpRequestMessage();
-                    request.RequestUri = new Uri(Configuration.Http.EchoClientCertificateRemoteServer);
-
-                    // Issue #35239. Force HTTP/1.1.
-                    request.Version = new Version(1,1);
-                    HttpResponseMessage response = client.SendAsync(request).GetAwaiter().GetResult(); // need a 4-arg overload of RemoteInvoke that returns a Task
-                    Assert.Equal(statusCode, response.StatusCode);
-
-                    if (statusCode == HttpStatusCode.OK)
-                    {
-                        string body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult(); // need a 4-arg overload of RemoteInvoke that returns a Task
-                        byte[] bytes = Convert.FromBase64String(body);
-                        var receivedCert = new X509Certificate2(bytes);
-                        Assert.Equal(clientCert, receivedCert);
-                    }
-
-                    return RemoteExecutor.SuccessExitCode;
-                }
-            }, certIndex.ToString(), expectedStatusCode.ToString(), UseSocketsHttpHandler.ToString(), UseHttp2.ToString()).Dispose();
+            }
         }
 
         [ActiveIssue(30056, TargetFrameworkMonikers.Uap)]
