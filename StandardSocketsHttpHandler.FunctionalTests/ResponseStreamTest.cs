@@ -80,7 +80,7 @@ namespace System.Net.Http.Functional.Tests
 
                         case 4:
                             // Individual calls to Read(Span)
-                            while ((bytesRead = stream.Read(new Span<byte>(buffer))) != 0)
+                            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
                             {
                                 ms.Write(buffer, 0, bytesRead);
                             }
@@ -173,7 +173,9 @@ namespace System.Net.Http.Functional.Tests
             using (Stream stream = await client.GetStreamAsync(remoteServer.EchoUri))
             {
                 Assert.Equal(0, stream.Read(new byte[1], 0, 0));
+#if !NET472
                 Assert.Equal(0, stream.Read(new Span<byte>(new byte[1], 0, 0)));
+#endif
                 Assert.Equal(0, await stream.ReadAsync(new byte[1], 0, 0));
             }
         }

@@ -118,7 +118,8 @@ namespace System.Net.Http.Functional.Tests
         {
             var content = new CustomContent(async s =>
             {
-                await s.WriteAsync(TestHelper.GenerateRandomContent(contentLength));
+                byte[] buffer = TestHelper.GenerateRandomContent(contentLength);
+                await s.WriteAsync(buffer, 0, buffer.Length);
             });
 
             var handler = new CustomResponseHandler((r, c) => Task.FromResult(new HttpResponseMessage() { Content = content }));

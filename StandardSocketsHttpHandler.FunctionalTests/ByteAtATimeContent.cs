@@ -33,7 +33,7 @@ namespace System.Net.Http.Functional.Tests
             for (int i = 0; i < _length; i++)
             {
                 buffer[0] = (byte)i;
-                await stream.WriteAsync(buffer);
+                await stream.WriteAsync(buffer, 0, buffer.Length);
                 await stream.FlushAsync();
                 await Task.Delay(_millisecondDelayBetweenBytes);
             }

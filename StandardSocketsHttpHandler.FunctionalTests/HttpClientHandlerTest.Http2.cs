@@ -1177,7 +1177,7 @@ namespace System.Net.Http.Functional.Tests
                 HeadersFrame retriedFrame = await newConnection.ReadRequestHeaderFrameAsync();
                 int retriedStreamId = retriedFrame.StreamId;
                 Assert.InRange(retriedStreamId, 1, Int32.MaxValue);
-                string headerData = Encoding.UTF8.GetString(retriedFrame.Data.Span);
+                string headerData = Encoding.UTF8.GetString(retriedFrame.Data.Span.ToArray());
 
                 await newConnection.SendDefaultResponseHeadersAsync(retriedStreamId);
                 await newConnection.SendResponseDataAsync(retriedStreamId, new byte[3], endStream: true);
@@ -1749,7 +1749,7 @@ namespace System.Net.Http.Functional.Tests
                         if (doRead)
                         {
                             // Start reading response as variation.
-                            _ = await stream.ReadAsync(buffer, cts.Token);
+                            _ = await stream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
                         }
 
                         doCancel.SetResult(true);
@@ -1762,7 +1762,7 @@ namespace System.Net.Http.Functional.Tests
                             {
                                 while (true)
                                 {
-                                    _ = await stream.ReadAsync(buffer, cts.Token);
+                                    _ = await stream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
                                 }
                             }
                             catch (OperationCanceledException) { };
@@ -1939,7 +1939,7 @@ namespace System.Net.Http.Functional.Tests
             byte[] readBuffer = new byte[data.Length];
 
             await connection.SendResponseDataAsync(streamId, data, endStream: false);
-            int bytesRead = await responseStream.ReadAsync(readBuffer);
+            int bytesRead = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
             Assert.True(data.Span.SequenceEqual(readBuffer));
         }
 
@@ -1948,18 +1948,18 @@ namespace System.Net.Http.Functional.Tests
             byte[] readBuffer = new byte[1];
 
             await connection.SendResponseDataAsync(streamId, new byte[] { }, endStream: true);
-            int bytesRead = await responseStream.ReadAsync(readBuffer);
+            int bytesRead = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
             Assert.Equal(0, bytesRead);
 
             // Another read should still give EOF
-            bytesRead = await responseStream.ReadAsync(readBuffer);
+            bytesRead = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
             Assert.Equal(0, bytesRead);
 
             // Dispose the response stream, to ensure that this doesn't affect the request stream
             responseStream.Dispose();
 
             // Attempting to read now should throw ObjectDisposedException
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () => { await responseStream.ReadAsync(readBuffer); });
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () => { await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length); });
         }
 
         private async Task SendAndReceiveRequestDataAsync(Memory<byte> data, Stream requestStream, Http2LoopbackConnection connection, int streamId)

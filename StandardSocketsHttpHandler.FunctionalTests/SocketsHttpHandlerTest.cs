@@ -1302,7 +1302,8 @@ namespace System.Net.Http.Functional.Tests
                             await clientStream.FlushAsync();
 
                             // Validate reading APIs on clientStream
-                            await connection.Stream.WriteAsync(Encoding.ASCII.GetBytes("abcdefghijklmnopqrstuvwxyz"));
+                            byte[] data = Encoding.ASCII.GetBytes("abcdefghijklmnopqrstuvwxyz");
+                            await connection.Stream.WriteAsync(data, 0, data.Length);
                             var buffer = new byte[1];
 
                             Assert.Equal('a', clientStream.ReadByte());
@@ -1334,7 +1335,7 @@ namespace System.Net.Http.Functional.Tests
                             Task copyTask = clientStream.CopyToAsync(ms);
 
                             string bigString = string.Concat(Enumerable.Repeat("abcdefghijklmnopqrstuvwxyz", 1000));
-                            Task lotsOfDataSent = connection.Socket.SendAsync(Encoding.ASCII.GetBytes(bigString), SocketFlags.None);
+                            Task lotsOfDataSent = connection.Socket.SendAsync(new ArraySegment<byte>(Encoding.ASCII.GetBytes(bigString)), SocketFlags.None);
                             connection.Socket.Shutdown(SocketShutdown.Send);
                             await copyTask;
                             await lotsOfDataSent;

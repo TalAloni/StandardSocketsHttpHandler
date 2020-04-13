@@ -94,7 +94,7 @@ namespace System.Net.Http.Functional.Tests
                     await connection.Writer.WriteAsync($"HTTP/1.1 200 OK\r\nContent-Encoding: {encodingName}\r\n\r\n");
                     using (Stream compressedStream = compress(connection.Stream))
                     {
-                        await compressedStream.WriteAsync(expectedContent);
+                        await compressedStream.WriteAsync(expectedContent, 0, expectedContent.Length);
                     }
                 });
             });
@@ -140,7 +140,7 @@ namespace System.Net.Http.Functional.Tests
             var compressedContentStream = new MemoryStream();
             using (Stream s = compress(compressedContentStream))
             {
-                await s.WriteAsync(expectedContent);
+                await s.WriteAsync(expectedContent, 0, expectedContent.Length);
             }
             byte[] compressedContent = compressedContentStream.ToArray();
 
@@ -158,7 +158,7 @@ namespace System.Net.Http.Functional.Tests
                 {
                     await connection.ReadRequestHeaderAsync();
                     await connection.Writer.WriteAsync($"HTTP/1.1 200 OK\r\nContent-Encoding: {encodingName}\r\n\r\n");
-                    await connection.Stream.WriteAsync(compressedContent);
+                    await connection.Stream.WriteAsync(compressedContent, 0, compressedContent.Length);
                 });
             });
         }

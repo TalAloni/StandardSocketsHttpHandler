@@ -573,7 +573,7 @@ namespace System.Net.Http.Functional.Tests
                     {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = await respStream.ReadAsync(buffer)) > 0)
+                        while ((bytesRead = await respStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                         {
                             actualData.Write(buffer, 0, bytesRead);
                         }
@@ -593,7 +593,7 @@ namespace System.Net.Http.Functional.Tests
                         int bytesRemaining = expectedData.Length - bytesSent;
                         int bytesToSend = rand.Next(1, Math.Min(bytesRemaining, maxChunkSize + 1));
                         await connection.Writer.WriteAsync(bytesToSend.ToString("X") + lineEnding);
-                        await connection.Stream.WriteAsync(new Memory<byte>(expectedData, bytesSent, bytesToSend));
+                        await connection.Stream.WriteAsync(expectedData, bytesSent, bytesToSend);
                         await connection.Writer.WriteAsync(lineEnding);
                         bytesSent += bytesToSend;
                     }
