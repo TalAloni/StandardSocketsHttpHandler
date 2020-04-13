@@ -143,7 +143,7 @@ namespace System.Net.Http.Functional.Tests
         [OuterLoop("Uses external servers")]
         public async Task UseDefaultCredentials_SetToFalseAndServerNeedsAuth_StatusCodeUnauthorized(bool useProxy)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -537,7 +537,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public void GetAsync_ServerNeedsAuthAndNoCredential_StatusCodeUnauthorized()
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -1269,7 +1269,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_ReadFromSlowStreamingServer_PartialDataReturned()
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -1339,7 +1339,7 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Throws<NotSupportedException>(() => responseStream.Seek(0, SeekOrigin.Begin));
                         Assert.Throws<NotSupportedException>(() => responseStream.SetLength(0));
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new byte[1], 0, 1));
-#if NET472
+#if NETFRAMEWORK
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new byte[1], 0, 1));
                         Assert.Throws<NotSupportedException>(() => { responseStream.WriteAsync(new byte[1], 0, 1); });
 #else
@@ -1397,7 +1397,7 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Equal(1, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, buffer, 0, 1, null));
                         Assert.Equal((byte)'e', buffer[0]);
 
-#if NET472
+#if NETFRAMEWORK
                         Assert.Equal(1, await responseStream.ReadAsync(buffer, 0, 1));
 #else
                         Assert.Equal(1, await responseStream.ReadAsync(new Memory<byte>(buffer)));
@@ -1407,7 +1407,7 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Equal(1, await responseStream.ReadAsync(buffer, 0, 1));
                         Assert.Equal((byte)'l', buffer[0]);
 
-#if NET472
+#if NETFRAMEWORK
                         Assert.Equal(1, responseStream.Read(buffer, 0, 1));
 #else
                         Assert.Equal(1, responseStream.Read(new Span<byte>(buffer)));
@@ -1421,11 +1421,11 @@ namespace System.Net.Http.Functional.Tests
                         {
                             // Doing any of these 0-byte reads causes the connection to fail.
                             Assert.Equal(0, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, Array.Empty<byte>(), 0, 0, null));
-#if !NET472
+#if !NETFRAMEWORK
                             Assert.Equal(0, await responseStream.ReadAsync(Memory<byte>.Empty));
 #endif
                             Assert.Equal(0, await responseStream.ReadAsync(Array.Empty<byte>(), 0, 0));
-#if !NET472
+#if !NETFRAMEWORK
                             Assert.Equal(0, responseStream.Read(Span<byte>.Empty));
 #endif
                             Assert.Equal(0, responseStream.Read(Array.Empty<byte>(), 0, 0));
@@ -1443,13 +1443,13 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Equal(0, ms.Length);
                         Assert.Equal(-1, responseStream.ReadByte());
                         Assert.Equal(0, responseStream.Read(buffer, 0, 1));
-#if NET472
+#if NETFRAMEWORK
                         Assert.Equal(0, responseStream.Read(buffer, 0, 1));
 #else
                         Assert.Equal(0, responseStream.Read(new Span<byte>(buffer)));
 #endif
                         Assert.Equal(0, await responseStream.ReadAsync(buffer, 0, 1));
-#if NET472
+#if NETFRAMEWORK
                         Assert.Equal(0, await responseStream.ReadAsync(buffer, 0, 1));
 #else
                         Assert.Equal(0, await responseStream.ReadAsync(new Memory<byte>(buffer)));
@@ -1508,7 +1508,7 @@ namespace System.Net.Http.Functional.Tests
                         Assert.Throws<NotSupportedException>(() => responseStream.Seek(0, SeekOrigin.Begin));
                         Assert.Throws<NotSupportedException>(() => responseStream.SetLength(0));
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new byte[1], 0, 1));
-#if !NET472
+#if !NETFRAMEWORK
                         Assert.Throws<NotSupportedException>(() => responseStream.Write(new Span<byte>(new byte[1])));
                         await Assert.ThrowsAsync<NotSupportedException>(async () => await responseStream.WriteAsync(new Memory<byte>(new byte[1])));
 #endif
@@ -1552,11 +1552,11 @@ namespace System.Net.Http.Functional.Tests
                         var buffer = new byte[1];
                         Assert.Equal(-1, responseStream.ReadByte());
                         Assert.Equal(0, await Task.Factory.FromAsync(responseStream.BeginRead, responseStream.EndRead, buffer, 0, 1, null));
-#if !NET472
+#if !NETFRAMEWORK
                         Assert.Equal(0, await responseStream.ReadAsync(new Memory<byte>(buffer)));
 #endif
                         Assert.Equal(0, await responseStream.ReadAsync(buffer, 0, 1));
-#if !NET472
+#if !NETFRAMEWORK
                         Assert.Equal(0, responseStream.Read(new Span<byte>(buffer)));
 #endif
                         Assert.Equal(0, responseStream.Read(buffer, 0, 1));
@@ -1664,7 +1664,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task GetAsync_UnicodeHostName_SuccessStatusCodeInResponse()
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -1916,7 +1916,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(false, "1.1")]
         [InlineData(true, "1.1")]
         [InlineData(null, "1.1")]
-#if !NET472
+#if !NETFRAMEWORK
         [InlineData(false, "2.0")]
         [InlineData(true, "2.0")]
         [InlineData(null, "2.0")]
@@ -2354,7 +2354,7 @@ namespace System.Net.Http.Functional.Tests
         [ActiveIssue(31104, TestPlatforms.AnyUnix)]
         public async Task PostAsync_ReuseRequestContent_Success(Configuration.Http.RemoteServer remoteServer)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2408,7 +2408,7 @@ namespace System.Net.Http.Functional.Tests
             string method,
             Uri serverUri)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2442,7 +2442,7 @@ namespace System.Net.Http.Functional.Tests
             string method,
             Uri serverUri)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2478,7 +2478,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData("12345678910", 5)]
         public async Task SendAsync_SendSameRequestMultipleTimesDirectlyOnHandler_Success(string stringContent, int startingPosition)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2518,7 +2518,7 @@ namespace System.Net.Http.Functional.Tests
             string method,
             Uri serverUri)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2577,7 +2577,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_RequestVersion11_ServerReceivesVersion11Request()
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2591,7 +2591,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_RequestVersionNotSpecified_ServerReceivesVersion11Request()
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -2609,7 +2609,7 @@ namespace System.Net.Http.Functional.Tests
             Assert.Equal(new Version(1, 1), receivedRequestVersion);
         }
 
-#if !NET472
+#if !NETFRAMEWORK
         [OuterLoop("Uses external server")]
         [ConditionalTheory]
         [MemberData(nameof(Http2Servers))]
@@ -2658,7 +2658,7 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-#if !NET472
+#if !NETFRAMEWORK
         [OuterLoop("Uses external server")]
         [ConditionalTheory(nameof(IsWindows10Version1607OrGreater)), MemberData(nameof(Http2NoPushServers))]
         public async Task SendAsync_RequestVersion20_ResponseVersion20(Uri server)

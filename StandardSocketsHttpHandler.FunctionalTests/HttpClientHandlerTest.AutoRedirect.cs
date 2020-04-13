@@ -485,7 +485,7 @@ namespace System.Net.Http.Functional.Tests
             {
                 await LoopbackServer.CreateServerAsync(async (origServer, origUrl) =>
                 {
-#if NET472
+#if NETFRAMEWORK
                     // .NET Framework 4.7.2 / 4.8 UriBuilder will always append the fragment marker ('#') to fragment starting with '#',
                     // while .NET Core will only append the fragment marker if not already present.
                     if (origFragment.StartsWith("#"))

@@ -2025,7 +2025,7 @@ namespace System.Net.Http.Functional.Tests
             });
         }
 
-#if !NET472
+#if !NETFRAMEWORK
         [ConditionalFact(nameof(SupportsAlpn))]
         public async Task Http2_ProtocolMismatch_Throws()
         {

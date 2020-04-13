@@ -41,14 +41,14 @@ namespace System.Net.Http.Functional.Tests
 
         protected HttpClient CreateHttpClient(StandardHttpMessageHandler handler)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 handler = new Http2MessageAdapter(handler);
             }
 #endif
             var client = new HttpClient(handler);
-#if !NET472
+#if !NETFRAMEWORK
             SetDefaultRequestVersion(client, VersionFromUseHttp2);
 #endif
             return client;
@@ -65,7 +65,7 @@ namespace System.Net.Http.Functional.Tests
 
         protected static HttpClient CreateHttpClient(StandardHttpMessageHandler handler, bool useHttp2)
         {
-#if NET472
+#if NETFRAMEWORK
             if (useHttp2)
             {
                 handler = new Http2MessageAdapter(handler);
@@ -157,7 +157,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-#if NET472
+#if NETFRAMEWORK
         private class Http2MessageAdapter : StandardHttpMessageHandler
         {
             private StandardHttpMessageHandler m_handler;

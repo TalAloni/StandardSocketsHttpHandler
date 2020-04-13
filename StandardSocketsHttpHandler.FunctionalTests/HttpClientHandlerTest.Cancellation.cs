@@ -513,7 +513,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-#if !NET472
+#if !NETFRAMEWORK
         [OuterLoop("Uses Task.Delay")]
         [Theory]
         [MemberData(nameof(PostAsync_Cancel_CancellationTokenPassedToContent_MemberData))]

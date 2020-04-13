@@ -105,7 +105,7 @@ namespace System
         // Windows - Schannel supports alpn from win8.1/2012 R2 and higher.
         // Linux - OpenSsl supports alpn from openssl 1.0.2 and higher.
         // OSX - SecureTransport doesn't expose alpn APIs. #30492
-#if NET472
+#if NETFRAMEWORK
         public static bool SupportsAlpn => false;
 #else
         public static bool SupportsAlpn => (IsWindows && !IsWindows7) ||

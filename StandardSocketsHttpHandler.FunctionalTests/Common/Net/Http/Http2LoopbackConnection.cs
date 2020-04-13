@@ -35,8 +35,8 @@ namespace System.Net.Test.Common
 
             if (httpOptions.UseSsl)
             {
-#if NET472
-                throw new PlatformNotSupportedException(".NET Framework 4.7.2 does not support ALPN");
+#if NETFRAMEWORK
+                throw new PlatformNotSupportedException(".NET Framework does not support ALPN");
 #else
                 var sslStream = new SslStream(_connectionStream, false, delegate { return true; });
 

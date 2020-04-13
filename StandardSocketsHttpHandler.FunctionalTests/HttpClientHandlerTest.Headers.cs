@@ -167,7 +167,7 @@ namespace System.Net.Http.Functional.Tests
 
         [Theory]
         [InlineData("Thu, 01 Dec 1994 16:00:00 GMT", true)]
-#if !NET472 // .NET Framework will not validate the "Expires" header value
+#if !NETFRAMEWORK // .NET Framework will not validate the "Expires" header value
         [InlineData("-1", false)]
         [InlineData("0", false)]
 #endif
@@ -193,7 +193,7 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [Theory]
-#if !NET472 // .NET Framework will not validate the "Expires" header value
+#if !NETFRAMEWORK // .NET Framework will not validate the "Expires" header value
         [InlineData("-1", false)]
 #endif
         [InlineData("Thu, 01 Dec 1994 16:00:00 GMT", true)]
@@ -237,7 +237,7 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(true)]
         public async Task SendAsync_GetWithValidHostHeader_Success(bool withPort)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
@@ -264,7 +264,7 @@ namespace System.Net.Http.Functional.Tests
         [Fact]
         public async Task SendAsync_GetWithInvalidHostHeader_ThrowsException()
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;

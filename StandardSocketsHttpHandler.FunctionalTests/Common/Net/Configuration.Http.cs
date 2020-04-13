@@ -60,7 +60,7 @@ namespace System.Net.Test.Common
             {
                 RemoteEchoServer,
                 SecureRemoteEchoServer,
-#if !NET472
+#if !NETFRAMEWORK
                 Http2RemoteEchoServer
 #endif
             };
@@ -72,7 +72,7 @@ namespace System.Net.Test.Common
             {
                 RemoteVerifyUploadServer,
                 SecureRemoteVerifyUploadServer,
-#if !NET472
+#if !NETFRAMEWORK
                 Http2RemoteVerifyUploadServer
 #endif
             };
@@ -98,7 +98,7 @@ namespace System.Net.Test.Common
             {
                 RemoteHttp11Server,
                 RemoteSecureHttp11Server,
-#if !NET472
+#if !NETFRAMEWORK
                 RemoteHttp2Server
 #endif
             };

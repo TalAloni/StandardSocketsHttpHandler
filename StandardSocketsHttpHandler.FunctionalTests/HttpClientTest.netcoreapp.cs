@@ -11,7 +11,7 @@ namespace System.Net.Http.Functional.Tests
 {
     public sealed partial class HttpClientTest
     {
-#if !NET472
+#if !NETFRAMEWORK
         [Fact]
         public void DefaultProxy_SetNull_Throws()
         {

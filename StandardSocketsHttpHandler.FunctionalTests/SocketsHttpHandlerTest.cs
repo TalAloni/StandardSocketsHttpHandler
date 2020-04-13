@@ -553,7 +553,7 @@ namespace System.Net.Http.Functional.Tests
         public SocketsHttpHandler_Http1_TrailingHeaders_Test(ITestOutputHelper output) : base(output) { }
         protected override bool UseSocketsHttpHandler => true;
 
-#if !NET472
+#if !NETFRAMEWORK
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
@@ -768,7 +768,7 @@ namespace System.Net.Http.Functional.Tests
         protected override bool UseSocketsHttpHandler => true;
         protected override bool UseHttp2 => true;
 
-#if !NET472
+#if !NETFRAMEWORK
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.SupportsAlpn))]
         public async Task Http2GetAsync_NoTrailingHeaders_EmptyCollection()
         {
@@ -847,7 +847,7 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-#if !NET472
+#if !NETFRAMEWORK
         [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.SupportsAlpn))]
         public async Task Http2GetAsyncResponseHeadersReadOption_TrailingHeaders_Available()
         {
@@ -1278,7 +1278,7 @@ namespace System.Net.Http.Functional.Tests
                             clientStream.Write(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2);
                             Assert.Equal("!", await connection.ReadLineAsync());
 
-#if NET472
+#if NETFRAMEWORK
                             clientStream.Write(new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)'\r', (byte)'\n' }, 0, 7);
 #else
                             clientStream.Write(new Span<byte>(new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)'\r', (byte)'\n' }));
@@ -1288,7 +1288,7 @@ namespace System.Net.Http.Functional.Tests
                             await clientStream.WriteAsync(new byte[] { (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 7);
                             Assert.Equal("world", await connection.ReadLineAsync());
 
-#if NET472
+#if NETFRAMEWORK
                             await clientStream.WriteAsync(new byte[] { (byte)'a', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 5);
 #else
                             await clientStream.WriteAsync(new Memory<byte>(new byte[] { (byte)'a', (byte)'n', (byte)'d', (byte)'\r', (byte)'\n' }, 0, 5));
@@ -1311,7 +1311,7 @@ namespace System.Net.Http.Functional.Tests
                             Assert.Equal(1, clientStream.Read(buffer, 0, 1));
                             Assert.Equal((byte)'b', buffer[0]);
 
-#if NET472
+#if NETFRAMEWORK
                             Assert.Equal(1, clientStream.Read(buffer, 0, 1));
 #else
                             Assert.Equal(1, clientStream.Read(new Span<byte>(buffer, 0, 1)));
@@ -1321,7 +1321,7 @@ namespace System.Net.Http.Functional.Tests
                             Assert.Equal(1, await clientStream.ReadAsync(buffer, 0, 1));
                             Assert.Equal((byte)'d', buffer[0]);
 
-#if NET472
+#if NETFRAMEWORK
                             Assert.Equal(1, await clientStream.ReadAsync(buffer, 0, 1));
 #else
                             Assert.Equal(1, await clientStream.ReadAsync(new Memory<byte>(buffer, 0, 1)));

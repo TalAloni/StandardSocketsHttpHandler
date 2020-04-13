@@ -30,7 +30,7 @@ namespace System.Net.Http.Functional.Tests
         [Theory, MemberData(nameof(RemoteServersMemberData))]
         public async Task PostRewindableStreamContentMultipleTimes_StreamContentFullySent(Configuration.Http.RemoteServer remoteServer)
         {
-#if NET472
+#if NETFRAMEWORK
             if (UseHttp2)
             {
                 return;
