@@ -6,10 +6,6 @@
     <DefineConstants>TargetsWindows</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net472' ">
-    <DefineConstants>TargetsWindows;NET472</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <Compile Remove="TestUtilities\PlatformDetection.NetFx.cs" />
   </ItemGroup>

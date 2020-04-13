@@ -1167,7 +1167,7 @@ namespace System.Net.Http
         private Task WriteToStreamAsync(ReadOnlyMemory<byte> source)
         {
             if (NetEventSource.IsEnabled) Trace($"Writing {source.Length} bytes.");
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             return _stream.WriteAsync(source);
 #else
             return _stream.WriteAsync(source).AsTask();
