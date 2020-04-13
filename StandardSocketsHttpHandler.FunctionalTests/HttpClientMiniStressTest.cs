@@ -138,6 +138,14 @@ namespace System.Net.Http.Functional.Tests
         [InlineData(5000)]
         public async Task MakeAndFaultManyRequests(int numRequests)
         {
+#if NETFRAMEWORK
+            if (UseHttp2)
+            {
+                // The .NET Framework implementation of multiple readers async reading from the same closed socket stream
+                // is causing this test to take an excessive amount of time.
+                return;
+            }
+#endif
             await LoopbackServer.CreateServerAsync(async (server, url) =>
             {
                 using (HttpClient client = CreateHttpClient())

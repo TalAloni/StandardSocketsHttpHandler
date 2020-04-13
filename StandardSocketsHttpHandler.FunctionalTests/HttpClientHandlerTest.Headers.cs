@@ -167,8 +167,10 @@ namespace System.Net.Http.Functional.Tests
 
         [Theory]
         [InlineData("Thu, 01 Dec 1994 16:00:00 GMT", true)]
+#if !NET472 // .NET Framework will not validate the "Expires" header value
         [InlineData("-1", false)]
         [InlineData("0", false)]
+#endif
         public async Task SendAsync_Expires_Success(string value, bool isValid)
         {
             await LoopbackServerFactory.CreateClientAndServerAsync(async uri =>
@@ -191,7 +193,9 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [Theory]
+#if !NET472 // .NET Framework will not validate the "Expires" header value
         [InlineData("-1", false)]
+#endif
         [InlineData("Thu, 01 Dec 1994 16:00:00 GMT", true)]
         public void HeadersAdd_CustomExpires_Success(string value, bool isValid)
         {

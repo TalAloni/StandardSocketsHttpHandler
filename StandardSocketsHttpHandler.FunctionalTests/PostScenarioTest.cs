@@ -24,6 +24,7 @@ namespace System.Net.Http.Functional.Tests
 
         public PostScenarioTest(ITestOutputHelper output) : base(output) { }
 
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework disposes request content after send")]
         [ActiveIssue(30057, TargetFrameworkMonikers.Uap)]
         [OuterLoop("Uses external servers")]
         [Theory, MemberData(nameof(RemoteServersMemberData))]
