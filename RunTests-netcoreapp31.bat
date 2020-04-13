@@ -1,0 +1,1 @@
+dotnet test StandardSocketsHttpHandler.FunctionalTests\StandardSocketsHttpHandler.FunctionalTests.csproj --framework netcoreapp3.1 --verbosity normal --filter "category!=WindowsAuthentication&category!=nonnetcoreapptests&category!=activeissue&category!=failing"
