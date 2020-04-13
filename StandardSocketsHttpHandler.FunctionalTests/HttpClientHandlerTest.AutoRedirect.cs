@@ -485,6 +485,24 @@ namespace System.Net.Http.Functional.Tests
             {
                 await LoopbackServer.CreateServerAsync(async (origServer, origUrl) =>
                 {
+#if NET472
+                    // .NET Framework 4.7.2 / 4.8 UriBuilder will always append the fragment marker ('#') to fragment starting with '#',
+                    // while .NET Core will only append the fragment marker if not already present.
+                    if (origFragment.StartsWith("#"))
+                    {
+                        origFragment = origFragment.Substring(1);
+                    }
+
+                    if (redirFragment.StartsWith("#"))
+                    {
+                        redirFragment = redirFragment.Substring(1);
+                    }
+
+                    if (expectedFragment.StartsWith("#"))
+                    {
+                        expectedFragment = expectedFragment.Substring(1);
+                    }
+#endif
                     origUrl = new UriBuilder(origUrl) { Fragment = origFragment }.Uri;
                     Uri redirectUrl = new UriBuilder(origUrl) { Fragment = redirFragment }.Uri;
                     if (useRelativeRedirect)
