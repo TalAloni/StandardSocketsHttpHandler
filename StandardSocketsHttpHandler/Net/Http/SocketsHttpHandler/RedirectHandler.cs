@@ -108,6 +108,14 @@ namespace System.Net.Http
                 string redirectFragment = location.Fragment;
                 if (string.IsNullOrEmpty(redirectFragment))
                 {
+#if NETSTANDARD20
+                    // .NET Framework 4.7.2 / 4.8 UriBuilder will always append the fragment marker ('#') to fragment starting with '#',
+                    // while .NET Core will only append the fragment marker if not already present.
+                    if (requestFragment.StartsWith("#"))
+                    {
+                        requestFragment = requestFragment.Substring(1);
+                    }
+#endif
                     location = new UriBuilder(location) { Fragment = requestFragment }.Uri;
                 }
             }
