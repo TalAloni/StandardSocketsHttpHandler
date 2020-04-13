@@ -47,6 +47,7 @@ namespace System.Net.Http.Functional.Tests
             Assert.False(proxy.Disposed);
         }
 
+        [Trait("Category", "WindowsAuthentication")]
         [ActiveIssue(32809)]
         [OuterLoop("Uses external server")]
         [ConditionalTheory(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsNanoServer))]
