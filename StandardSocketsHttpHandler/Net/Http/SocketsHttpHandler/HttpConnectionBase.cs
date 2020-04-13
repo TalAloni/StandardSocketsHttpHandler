@@ -22,7 +22,7 @@ namespace System.Net.Http
                 Trace(
                     $"{this}. " +
                     $"SslProtocol:{sslStream.SslProtocol}, " +
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                     $"NegotiatedApplicationProtocol:{sslStream.NegotiatedApplicationProtocol}, " +
 #endif
                     $"CipherAlgorithm:{sslStream.CipherAlgorithm}, CipherStrength:{sslStream.CipherStrength}, " +

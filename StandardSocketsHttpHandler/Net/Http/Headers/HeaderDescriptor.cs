@@ -129,7 +129,7 @@ namespace System.Net.Http.Headers
 
         private static bool TryDecodeUtf8(ReadOnlySpan<byte> input, out string decoded)
         {
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             char[] rented = new char[input.Length];
 #else
             char[] rented = ArrayPool<char>.Shared.Rent(input.Length);
@@ -145,7 +145,7 @@ namespace System.Net.Http.Headers
             }
             finally
             {
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                 ArrayPool<char>.Shared.Return(rented);
 #endif
             }

@@ -1753,7 +1753,7 @@ namespace System.Net.Http
 
             lock (SyncObject)
             {
-#if NETSTANDARD20
+#if NETSTANDARD2_0
                 if (!_httpStreams.Remove(http2Stream.StreamId))
 #else
                 if (!_httpStreams.Remove(http2Stream.StreamId, out Http2Stream removed))
@@ -1764,7 +1764,7 @@ namespace System.Net.Http
                 }
 
                 _concurrentStreams.AdjustCredit(1);
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                 Debug.Assert(removed == http2Stream, "_httpStreams.TryRemove returned unexpected stream");
 #endif
                 if (_httpStreams.Count == 0)

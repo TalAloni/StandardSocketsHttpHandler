@@ -172,7 +172,7 @@ namespace System.Net.Http
                 Debug.Assert(_readAheadTask == null || _socket == null, "Should only already have a read-ahead task if we don't have a socket to poll");
                 if (_readAheadTask == null)
                 {
-#if NETSTANDARD20
+#if NETSTANDARD2_0
                     _readAheadTask = new ValueTask<int>(_stream.ReadAsync(new Memory<byte>(_readBuffer)));
 #else
                     _readAheadTask = _stream.ReadAsync(new Memory<byte>(_readBuffer));
@@ -960,7 +960,7 @@ namespace System.Net.Http
             // Request headers returned on the response must be treated as custom headers.
             if (isFromTrailer)
             {
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                 response.TrailingHeaders.TryAddWithoutValidation(descriptor.HeaderType == HttpHeaderType.Request ? descriptor.AsCustomHeader().Name : descriptor.Name, headerValue);
 #endif
             }
@@ -1234,7 +1234,7 @@ namespace System.Net.Http
         private ValueTask WriteToStreamAsync(ReadOnlyMemory<byte> source)
         {
             if (NetEventSource.IsEnabled) Trace($"Writing {source.Length} bytes.");
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             return new ValueTask(_stream.WriteAsync(source));
 #else
             return _stream.WriteAsync(source);
@@ -1695,7 +1695,7 @@ namespace System.Net.Http
                             if (desiredBufferSize > currentReadBuffer.Length)
                             {
                                 origReadBuffer = currentReadBuffer;
-#if NETSTANDARD20
+#if NETSTANDARD2_0
                                 _readBuffer = new byte[desiredBufferSize];
 #else
                                 _readBuffer = ArrayPool<byte>.Shared.Rent(desiredBufferSize);
@@ -1711,7 +1711,7 @@ namespace System.Net.Http
                 {
                     byte[] tmp = _readBuffer;
                     _readBuffer = origReadBuffer;
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                     ArrayPool<byte>.Shared.Return(tmp);
 #endif
                     // _readOffset and _readLength may not be within range of the original

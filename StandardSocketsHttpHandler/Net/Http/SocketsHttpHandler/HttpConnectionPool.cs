@@ -436,7 +436,7 @@ namespace System.Net.Http
                         return (_http2Connection, true, null);
                     }
 
-#if NETSTANDARD20
+#if NETSTANDARD2_0
                     throw new PlatformNotSupportedException(".NET Standard 2.0 does not support ALPN");
 #else
                     sslStream = (SslStream)stream;

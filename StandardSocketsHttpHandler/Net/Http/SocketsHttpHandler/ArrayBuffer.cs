@@ -32,7 +32,7 @@ namespace System.Net.Http
         public ArrayBuffer(int initialSize, bool usePool = false)
         {
             _usePool = usePool;
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             _bytes = new byte[initialSize];
 #else
             _bytes = usePool ? ArrayPool<byte>.Shared.Rent(initialSize) : new byte[initialSize];
@@ -50,7 +50,7 @@ namespace System.Net.Http
                 byte[] array = _bytes;
                 _bytes = null;
 
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                 if (array != null)
                 {
                     ArrayPool<byte>.Shared.Return(array);
@@ -113,7 +113,7 @@ namespace System.Net.Http
                 newSize *= 2;
             } while (newSize < desiredSize);
 
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             byte[] newBytes = new byte[newSize];
 #else
             byte[] newBytes = _usePool ?
@@ -131,7 +131,7 @@ namespace System.Net.Http
             _activeStart = 0;
 
             _bytes = newBytes;
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
             if (_usePool)
             {
                 ArrayPool<byte>.Shared.Return(oldBytes);

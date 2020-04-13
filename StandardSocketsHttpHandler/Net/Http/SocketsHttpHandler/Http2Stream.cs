@@ -960,7 +960,7 @@ namespace System.Net.Http
 
             private void CopyTrailersToResponseMessage(HttpResponseMessage responseMessage)
             {
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
                 if (_trailers != null && _trailers.Count > 0)
                 {
                     foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)

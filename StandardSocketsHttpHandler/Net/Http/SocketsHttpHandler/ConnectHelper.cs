@@ -140,7 +140,7 @@ namespace System.Net.Http
         {
             SslStream sslStream = new SslStream(stream, false, sslOptions.RemoteCertificateValidationCallback, sslOptions.LocalCertificateSelectionCallback, sslOptions.EncryptionPolicy);
 
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             // SslStream.AuthenticateAsClientAsync ignores cancellationToken, this workaround was used in .NET Core 2.1
             // The workaround was removed in .NET Core 3.0 after the issue was fixed: https://github.com/dotnet/runtime/issues/24116
             CancellationTokenRegistration ctr = cancellationToken.Register(s => ((Stream)s).Dispose(), stream);
@@ -165,7 +165,7 @@ namespace System.Net.Http
 
                 throw new HttpRequestException(SR.net_http_ssl_connection_failed, e);
             }
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             finally
             {
                 ctr.Dispose();

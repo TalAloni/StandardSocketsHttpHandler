@@ -37,7 +37,7 @@ namespace System.Net.Http.Headers
             // Encode a string using RFC 5987 encoding.
             // encoding'lang'PercentEncodedSpecials
             StringBuilder builder = StringBuilderCache.Acquire();
-#if NETSTANDARD20
+#if NETSTANDARD2_0
             byte[] utf8bytes = new byte[Encoding.UTF8.GetMaxByteCount(input.Length)];
 #else
             byte[] utf8bytes = ArrayPool<byte>.Shared.Rent(Encoding.UTF8.GetMaxByteCount(input.Length));
@@ -68,7 +68,7 @@ namespace System.Net.Http.Headers
             }
 
             Array.Clear(utf8bytes, 0, utf8length);
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
             ArrayPool<byte>.Shared.Return(utf8bytes);
 #endif
             return StringBuilderCache.GetStringAndRelease(builder);

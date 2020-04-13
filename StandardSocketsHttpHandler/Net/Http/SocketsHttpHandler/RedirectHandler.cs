@@ -119,7 +119,7 @@ namespace System.Net.Http
                 string redirectFragment = location.Fragment;
                 if (string.IsNullOrEmpty(redirectFragment))
                 {
-#if NETSTANDARD20
+#if NETSTANDARD2_0
                     // .NET Framework 4.7.2 / 4.8 UriBuilder will append additional fragment marker ('#') to fragment starting with '#'
                     if (requestFragment.StartsWith("#"))
                     {

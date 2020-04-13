@@ -66,7 +66,7 @@ namespace System.Net.Security
             set => _enabledSslProtocols = value;
         }
 
-#if !NETSTANDARD20
+#if !NETSTANDARD2_0
         /// <summary>
         /// Specifies cipher suites allowed to be used for TLS.
         /// When set to null operating system default will be used.

@@ -127,7 +127,7 @@ namespace System.Net.Http
         //
         // Methods which must be implemented by derived classes
         //
-#if NETSTANDARD20
+#if NETSTANDARD2_0
         public abstract int Read(Span<byte> buffer);
         public abstract ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken);
         public abstract ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken);
