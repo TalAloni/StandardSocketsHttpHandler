@@ -513,42 +513,41 @@ namespace System.Net.Http.Functional.Tests
             }
         }
 
-#if !NETFRAMEWORK
-        [OuterLoop("Uses Task.Delay")]
-        [Theory]
-        [MemberData(nameof(PostAsync_Cancel_CancellationTokenPassedToContent_MemberData))]
-        public async Task PostAsync_Cancel_CancellationTokenPassedToContent(HttpContent content, CancellationTokenSource cancellationTokenSource)
-        {
-            if (IsUapHandler)
-            {
-                // HttpHandlerToFilter doesn't flow the token into the request body.
-                return;
-            }
-
-            await LoopbackServerFactory.CreateClientAndServerAsync(
-                async uri =>
-                {
-                    using (var invoker = new HttpMessageInvoker(CreateSocketsHttpHandler()))
-                    using (var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = content, Version = VersionFromUseHttp2 })
-                    try
-                    {
-                        using (HttpResponseMessage resp = await invoker.SendAsync(req, cancellationTokenSource.Token))
-                        {
-                            Assert.Equal("Hello World", await resp.Content.ReadAsStringAsync());
-                        }
-                    }
-                    catch (OperationCanceledException) { }
-                },
-                async server =>
-                {
-                    try
-                    {
-                        await server.HandleRequestAsync(content: "Hello World");
-                    }
-                    catch (Exception) { }
-                });
-        }
-#endif
+        // Note: in .NET Standard 2.0 / 2.1, HttpContent.CopyToAsync does not have a public overload with CancellationToken.
+        //[OuterLoop("Uses Task.Delay")]
+        //[Theory]
+        //[MemberData(nameof(PostAsync_Cancel_CancellationTokenPassedToContent_MemberData))]
+        //public async Task PostAsync_Cancel_CancellationTokenPassedToContent(HttpContent content, CancellationTokenSource cancellationTokenSource)
+        //{
+        //    if (IsUapHandler)
+        //    {
+        //        // HttpHandlerToFilter doesn't flow the token into the request body.
+        //        return;
+        //    }
+        //
+        //    await LoopbackServerFactory.CreateClientAndServerAsync(
+        //        async uri =>
+        //        {
+        //            using (var invoker = new HttpMessageInvoker(CreateSocketsHttpHandler()))
+        //            using (var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = content, Version = VersionFromUseHttp2 })
+        //            try
+        //            {
+        //                using (HttpResponseMessage resp = await invoker.SendAsync(req, cancellationTokenSource.Token))
+        //                {
+        //                    Assert.Equal("Hello World", await resp.Content.ReadAsStringAsync());
+        //                }
+        //            }
+        //            catch (OperationCanceledException) { }
+        //        },
+        //        async server =>
+        //        {
+        //            try
+        //            {
+        //                await server.HandleRequestAsync(content: "Hello World");
+        //            }
+        //            catch (Exception) { }
+        //        });
+        //}
 
         private async Task ValidateClientCancellationAsync(Func<Task> clientBodyAsync)
         {
