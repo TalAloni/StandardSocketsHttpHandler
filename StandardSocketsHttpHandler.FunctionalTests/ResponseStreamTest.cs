@@ -157,7 +157,7 @@ namespace System.Net.Http.Functional.Tests
             using (Stream stream = await client.GetStreamAsync(Configuration.Http.RemoteEchoServer))
             {
                 Assert.Equal(0, stream.Read(new byte[1], 0, 0));
-#if !NET472
+#if !NETFRAMEWORK
                 Assert.Equal(0, stream.Read(new Span<byte>(new byte[1], 0, 0)));
 #endif
                 Assert.Equal(0, await stream.ReadAsync(new byte[1], 0, 0));
