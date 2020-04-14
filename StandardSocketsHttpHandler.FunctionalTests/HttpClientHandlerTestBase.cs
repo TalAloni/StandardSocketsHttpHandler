@@ -125,7 +125,9 @@ namespace System.Net.Http.Functional.Tests
             wrappedHandler = new VersionCheckerHttpHandler(httpClientHandler, remoteServer.HttpVersion);
 
             var client = new HttpClient(wrappedHandler);
+#if !NETFRAMEWORK
             SetDefaultRequestVersion(client, remoteServer.HttpVersion);
+#endif
             return client;
         }
 
