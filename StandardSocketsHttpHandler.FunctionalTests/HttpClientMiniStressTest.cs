@@ -81,6 +81,7 @@ namespace System.Net.Http.Functional.Tests
         }
     }
 
+    [Collection(nameof(HttpClientMiniStress))]
     public abstract class HttpClientMiniStress : HttpClientHandlerTestBase
     {
         public HttpClientMiniStress(ITestOutputHelper output) : base(output) { }
