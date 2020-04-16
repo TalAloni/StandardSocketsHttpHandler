@@ -1753,16 +1753,20 @@ namespace System.Net.Http
 
             lock (SyncObject)
             {
+#if NETSTANDARD20
+                if (!_httpStreams.Remove(http2Stream.StreamId))
+#else
                 if (!_httpStreams.Remove(http2Stream.StreamId, out Http2Stream removed))
+#endif
                 {
                     Debug.Fail($"Stream {http2Stream.StreamId} not found in dictionary during RemoveStream???");
                     return;
                 }
 
                 _concurrentStreams.AdjustCredit(1);
-
+#if !NETSTANDARD20
                 Debug.Assert(removed == http2Stream, "_httpStreams.TryRemove returned unexpected stream");
-
+#endif
                 if (_httpStreams.Count == 0)
                 {
                     // If this was last pending request, get timestamp so we can monitor idle time.
