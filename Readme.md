@@ -5,7 +5,7 @@ StandardSocketsHttpHandler is a backport of SocketsHttpHandler to .NET Standard 
 Features added to StandardSocketsHttpHandler:
 =============================================
 • .NET Standard 2.0 compatibility (.NET Framework 4.7.2 is supported)  
-• SocketCreated Event - allows configuration of various socket options (TCP Keepalive, etc.)  
+• ConnectCallback property - allows configuration of various socket options (TCP Keepalive, etc.)  
 
 Features missing from StandardSocketsHttpHandler:
 =============================================
