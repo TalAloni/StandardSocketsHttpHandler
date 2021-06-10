@@ -633,11 +633,11 @@ namespace System.Net.Http
                     case HttpConnectionKind.Http:
                     case HttpConnectionKind.Https:
                     case HttpConnectionKind.ProxyConnect:
-                        stream = await ConnectHelper.ConnectAsync(_host, _port, _poolManager.Settings._configureSocket, cancellationToken).ConfigureAwait(false);
+                        stream = await ConnectHelper.ConnectAsync(_host, _port, _poolManager.Settings._connectCallback, cancellationToken).ConfigureAwait(false);
                         break;
 
                     case HttpConnectionKind.Proxy:
-                        stream = await ConnectHelper.ConnectAsync(_proxyUri.IdnHost, _proxyUri.Port, _poolManager.Settings._configureSocket, cancellationToken).ConfigureAwait(false);
+                        stream = await ConnectHelper.ConnectAsync(_proxyUri.IdnHost, _proxyUri.Port, _poolManager.Settings._connectCallback, cancellationToken).ConfigureAwait(false);
                         break;
 
                     case HttpConnectionKind.ProxyTunnel:

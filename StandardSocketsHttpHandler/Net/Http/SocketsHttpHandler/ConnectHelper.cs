@@ -34,8 +34,14 @@ namespace System.Net.Http
             }
         }
 
-        public static async ValueTask<Stream> ConnectAsync(string host, int port, ConfigureSocket configureSocket, CancellationToken cancellationToken)
+        public static async ValueTask<Stream> ConnectAsync(string host, int port, Func<SocketsHttpConnectionContext, CancellationToken, Task<Stream>> connectCallback, CancellationToken cancellationToken)
         {
+            DnsEndPoint remoteEndPoint = new DnsEndPoint(host, port);
+            if (connectCallback != null)
+            {
+                return await connectCallback(new SocketsHttpConnectionContext(remoteEndPoint), cancellationToken);
+            }
+
             // Rather than creating a new Socket and calling ConnectAsync on it, we use the static
             // Socket.ConnectAsync with a SocketAsyncEventArgs, as we can then use Socket.CancelConnectAsync
             // to cancel it if needed.
@@ -45,7 +51,7 @@ namespace System.Net.Http
                 saea.Initialize(cancellationToken);
 
                 // Configure which server to which to connect.
-                saea.RemoteEndPoint = new DnsEndPoint(host, port);
+                saea.RemoteEndPoint = remoteEndPoint;
 
                 // Initiate the connection.
                 if (Socket.ConnectAsync(SocketType.Stream, ProtocolType.Tcp, saea))
@@ -68,7 +74,6 @@ namespace System.Net.Http
                 // Configure the socket and return a stream for it.
                 Socket socket = saea.ConnectSocket;
                 socket.NoDelay = true;
-                configureSocket(socket);
                 return new ExposedSocketNetworkStream(socket, ownsSocket: true);
             }
             catch (Exception error) when (!(error is OperationCanceledException))
