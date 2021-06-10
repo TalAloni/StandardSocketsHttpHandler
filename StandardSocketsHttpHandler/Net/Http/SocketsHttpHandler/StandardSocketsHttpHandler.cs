@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
@@ -16,14 +17,8 @@ namespace System.Net.Http
         private StandardHttpMessageHandler _handler;
         private bool _disposed;
         
-        public event EventHandler<Socket> SocketCreated;
-
         public StandardSocketsHttpHandler()
         {
-            _settings._configureSocket = (Socket socket) =>
-            {
-                SocketCreated?.Invoke(this, socket);
-            };
         }
 
         private void CheckDisposed()
@@ -278,6 +273,19 @@ namespace System.Net.Http
 
                 CheckDisposedOrStarted();
                 _settings._expect100ContinueTimeout = value;
+            }
+        }
+
+        /// <summary>
+        /// When non-null, a custom callback used to open new connections.
+        /// </summary>
+        public Func<SocketsHttpConnectionContext, CancellationToken, Task<Stream>> ConnectCallback
+        {
+            get => _settings._connectCallback;
+            set
+            {
+                CheckDisposedOrStarted();
+                _settings._connectCallback = value;
             }
         }
 

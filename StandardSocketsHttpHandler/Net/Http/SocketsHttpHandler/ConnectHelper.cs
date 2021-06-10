@@ -39,8 +39,20 @@ namespace System.Net.Http
             }
         }
 
-        public static async Task<(Socket, Stream)> ConnectAsync(string host, int port, ConfigureSocket configureSocket, CancellationToken cancellationToken)
+        public static async Task<(Socket, Stream)> ConnectAsync(string host, int port, Func<SocketsHttpConnectionContext, CancellationToken, Task<Stream>> connectCallback, CancellationToken cancellationToken)
         {
+            DnsEndPoint remoteEndPoint = new DnsEndPoint(host, port);
+            if (connectCallback != null)
+            {
+                Stream stream = await connectCallback(new SocketsHttpConnectionContext(remoteEndPoint), cancellationToken);
+                Socket socket = null;
+                if (stream is NetworkStream)
+                {
+                    socket = typeof(NetworkStream).GetProperty("Socket", Reflection.BindingFlags.Instance | Reflection.BindingFlags.NonPublic).GetValue(stream) as Socket;
+                }
+                return (socket, stream);
+            }
+
             // Rather than creating a new Socket and calling ConnectAsync on it, we use the static
             // Socket.ConnectAsync with a SocketAsyncEventArgs, as we can then use Socket.CancelConnectAsync
             // to cancel it if needed. Rent or allocate one.
@@ -55,7 +67,7 @@ namespace System.Net.Http
                 saea.Initialize(cancellationToken);
 
                 // Configure which server to which to connect.
-                saea.RemoteEndPoint = new DnsEndPoint(host, port);
+                saea.RemoteEndPoint = remoteEndPoint;
 
                 // Initiate the connection.
                 if (Socket.ConnectAsync(SocketType.Stream, ProtocolType.Tcp, saea))
@@ -78,7 +90,6 @@ namespace System.Net.Http
                 // Configure the socket and return a stream for it.
                 Socket socket = saea.ConnectSocket;
                 socket.NoDelay = true;
-                configureSocket(socket);
                 return (socket, new NetworkStream(socket, ownsSocket: true));
             }
             catch (Exception error)

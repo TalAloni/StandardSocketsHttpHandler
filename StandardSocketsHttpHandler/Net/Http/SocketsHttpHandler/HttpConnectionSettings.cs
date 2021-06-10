@@ -3,7 +3,10 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Security;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace System.Net.Http
 {
@@ -38,7 +41,7 @@ namespace System.Net.Http
         internal SslClientAuthenticationOptions _sslOptions;
 
         internal IDictionary<string, object> _properties;
-        internal ConfigureSocket _configureSocket = (_) => { };
+        internal Func<SocketsHttpConnectionContext, CancellationToken, Task<Stream>> _connectCallback;
 
         public HttpConnectionSettings Clone()
         {
@@ -68,7 +71,7 @@ namespace System.Net.Http
                 _properties = _properties,
                 _proxy = _proxy,
                 _sslOptions = _sslOptions?.ShallowClone(), // shallow clone the options for basic prevention of mutation issues while processing
-                _configureSocket = _configureSocket,
+                _connectCallback = _connectCallback,
                 _useCookies = _useCookies,
                 _useProxy = _useProxy,
             };
