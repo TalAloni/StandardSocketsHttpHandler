@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net461</TargetFrameworks>
     <RootNamespace>System.Net.Http</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <Version>2.2.0.2</Version>
+    <Version>2.3.0.0-beta01</Version>
     <Authors>Tal Aloni</Authors>
     <PackageDescription>StandardSocketsHttpHandler is a backport of SocketsHttpHandler to .NET Standard 2.0</PackageDescription>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -13,6 +13,12 @@
     <RepositoryUrl>https://github.com/TalAloni/StandardSocketsHttpHandler</RepositoryUrl>
   </PropertyGroup>
 
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+		<PackageReference Include="System.Net.Http" Version="4.1.2" />
+		<PackageReference Include="System.Buffers" Version="4.4.0" />
+		<PackageReference Include="System.Memory" Version="4.5.1" />
+	</ItemGroup>
+	
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
     <Compile Remove="HashCode.cs" />
     <Compile Remove="IO\Extensions\StreamExtensions.cs" />
