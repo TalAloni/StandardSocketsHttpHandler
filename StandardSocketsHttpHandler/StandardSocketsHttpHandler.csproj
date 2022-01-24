@@ -26,12 +26,11 @@
     <Compile Remove="Net\Security\Extensions\SslStreamExtensions.cs" />
     <Compile Remove="Net\Security\SslApplicationProtocol.cs" />
     <Compile Remove="Net\Security\SslClientAuthenticationOptions.cs" />
-    <Compile Remove="Threading\Tasks\Sources\ManualResetValueTaskSourceCore.cs" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="System.Memory" Version="4.5.1" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>
