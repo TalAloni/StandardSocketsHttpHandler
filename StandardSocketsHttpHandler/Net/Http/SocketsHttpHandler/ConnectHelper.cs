@@ -48,7 +48,8 @@ namespace System.Net.Http
                 Socket socket = null;
                 if (stream is NetworkStream)
                 {
-                    socket = typeof(NetworkStream).GetProperty("Socket", Reflection.BindingFlags.Instance | Reflection.BindingFlags.NonPublic).GetValue(stream) as Socket;
+                    // The Socket property is protected in .NET Framework 4.7.2 and .NET Core 3.1 and public in .NET 5.0 and .NET 6.0
+                    socket = typeof(NetworkStream).GetProperty("Socket", Reflection.BindingFlags.Instance | Reflection.BindingFlags.Public | Reflection.BindingFlags.NonPublic).GetValue(stream) as Socket;
                 }
                 return (socket, stream);
             }
