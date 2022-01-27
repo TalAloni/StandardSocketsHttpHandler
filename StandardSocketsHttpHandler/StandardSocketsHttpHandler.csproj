@@ -5,7 +5,7 @@
     <RootNamespace>System.Net.Http</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <Version>2.2.0.3</Version>
+    <Version>2.2.0.4</Version>
     <Authors>Tal Aloni</Authors>
     <PackageDescription>StandardSocketsHttpHandler is a backport of SocketsHttpHandler to .NET Standard 2.0</PackageDescription>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
