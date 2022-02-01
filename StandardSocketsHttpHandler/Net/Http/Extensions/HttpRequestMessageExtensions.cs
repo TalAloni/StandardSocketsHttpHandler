@@ -10,7 +10,8 @@ namespace System.Net.Http
         {
             // Note: The field name is _headers in .NET core 
             bool isDotNetFramework = RuntimeUtils.IsDotNetFramework();
-            string headersFieldName = isDotNetFramework ? "headers" : "_headers";
+            bool isDotNetFrameworkOrMono = isDotNetFramework || RuntimeUtils.IsMono();
+            string headersFieldName = isDotNetFrameworkOrMono ? "headers" : "_headers";
             FieldInfo headersField = typeof(HttpRequestMessage).GetField(headersFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             if (headersField == null && isDotNetFramework)
             {
