@@ -6,20 +6,15 @@ namespace System.Net.Http
 {
     internal static class HttpRequestMessageExtensions
     {
+        // Depending on runtime the backing field for headers is either _headers or headers:
+        // _headers in .net core and some .net fx and mono versions (.NET Framework 4.6.1, Mono on Mac)
+        // headers in other .net fx / mono versions.
+        private static readonly FieldInfo s_headersField = typeof(HttpRequestMessage).GetField("_headers", BindingFlags.Instance | BindingFlags.NonPublic) ??
+            typeof(HttpRequestMessage).GetField("headers", BindingFlags.Instance | BindingFlags.NonPublic);
+
         public static bool HasHeaders(this HttpRequestMessage request)
         {
-            // Note: The field name is _headers in .NET core 
-            bool isDotNetFramework = RuntimeUtils.IsDotNetFramework();
-            bool isDotNetFrameworkOrMono = isDotNetFramework || RuntimeUtils.IsMono();
-            string headersFieldName = isDotNetFrameworkOrMono ? "headers" : "_headers";
-            FieldInfo headersField = typeof(HttpRequestMessage).GetField(headersFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            if (headersField == null && isDotNetFramework)
-            {
-                // Fallback for .NET Framework 4.6.1
-                headersFieldName = "_headers";
-                headersField = typeof(HttpRequestMessage).GetField(headersFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            }
-            HttpRequestHeaders headers = (HttpRequestHeaders)headersField.GetValue(request);
+            HttpRequestHeaders headers = (HttpRequestHeaders)s_headersField.GetValue(request);
             return headers != null;
         }
     }
