@@ -655,6 +655,15 @@ namespace System.Net.Http {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The response ended prematurely..
+        /// </summary>
+        public static string net_http_invalid_response_premature_eof {
+            get {
+                return ResourceManager.GetString("net_http_invalid_response_premature_eof", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The read operation failed, see inner exception..
         /// </summary>
         public static string net_http_io_read {
