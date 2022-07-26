@@ -61,6 +61,7 @@ namespace System.Net.Http
 
         private bool _inUse;
         private bool _canRetry;
+        private bool _startedSendingRequestBody;
         private bool _connectionClose; // Connection: close was seen on last response
         private int _disposed; // 1 yes, 0 no
 
@@ -363,8 +364,8 @@ namespace System.Net.Http
             HttpMethod normalizedMethod = HttpMethodUtils.Normalize(request.Method);
             bool hasExpectContinueHeader = request.HasHeaders() && request.Headers.ExpectContinue == true;
 
-            Debug.Assert(!_canRetry);
             _canRetry = true;
+            _startedSendingRequestBody = false;
 
             // Send the request.
             if (NetEventSource.IsEnabled) Trace($"Sending request: {request}");
@@ -511,19 +512,27 @@ namespace System.Net.Http
                     int bytesRead = await t.ConfigureAwait(false);
                     if (NetEventSource.IsEnabled) Trace($"Received {bytesRead} bytes.");
 
-                    if (bytesRead == 0)
-                    {
-                        throw new IOException(SR.net_http_invalid_response);
-                    }
-
                     _readOffset = 0;
                     _readLength = bytesRead;
                 }
+                else
+                {
+                    // No read-ahead, so issue a read ourselves. We will check below for EOF.
+                    await InitialFillAsync().ConfigureAwait(false);
+                }
 
-                // The request is no longer retryable; either we received data from the _readAheadTask,
-                // or there was no _readAheadTask because this is the first request on the connection.
-                // (We may have already set this as well if we sent request content.)
-                _canRetry = false;
+                if (_readLength == 0)
+                {
+                    // The server shutdown the connection on their end, likely because of an idle timeout.
+                    // If we haven't started sending the request body yet (or there is no request body),
+                    // then we allow the request to be retried.
+                    if (!_startedSendingRequestBody)
+                    {
+                        _canRetry = true;
+                    }
+
+                    throw new IOException(SR.net_http_invalid_response_premature_eof);
+                }
 
                 // Parse the response status line.
                 var response = new HttpResponseMessage() { RequestMessage = request, Content = new HttpConnectionResponseContent() };
@@ -765,8 +774,8 @@ namespace System.Net.Http
 
         private async Task SendRequestContentAsync(HttpRequestMessage request, HttpContentWriteStream stream, CancellationToken cancellationToken)
         {
-            // Now that we're sending content, prohibit retries on this connection.
-            _canRetry = false;
+            // Now that we're sending content, prohibit retries of this request by setting this flag.
+            _startedSendingRequestBody = true;
 
             // Copy all of the data to the server.
             // Note: We ignore cancellationToken, this may be inefficient if we intend to cancel lengthy requests.
@@ -1295,6 +1304,17 @@ namespace System.Net.Http
             {
                 ThrowInvalidHttpResponse();
             }
+        }
+
+        // Does not throw on EOF. Also assumes there is no buffered data.
+        private async Task InitialFillAsync()
+        {
+            Debug.Assert(_readAheadTask == null);
+
+            _readOffset = 0;
+            _readLength = await _stream.ReadAsync(_readBuffer).ConfigureAwait(false);
+
+            if (NetEventSource.Log.IsEnabled()) Trace($"Received {_readLength} bytes.");
         }
 
         // Throws IOException on EOF.  This is only called when we expect more data.
