@@ -61,6 +61,42 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [Fact]
+        public async Task PostAsyncOnExistingConnection_RetryOnConnectionClosed_Success()
+        {
+            await LoopbackServer.CreateClientAndServerAsync(async url =>
+            {
+                using (HttpClient client = CreateHttpClient())
+                {
+                    // Send initial request and receive response so connection is established
+                    HttpResponseMessage response1 = await client.PostAsync(url, new ByteArrayContent(new byte[1]));
+                    Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
+                    Assert.Equal(s_simpleContent, await response1.Content.ReadAsStringAsync());
+
+                    // Send second request.  Should reuse same connection.
+                    // The server will close the connection, but HttpClient should retry the request.
+                    HttpResponseMessage response2 = await client.PostAsync(url, new ByteArrayContent(new byte[1]));
+                    Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
+                    Assert.Equal(s_simpleContent, await response2.Content.ReadAsStringAsync());
+                }
+            },
+            async server =>
+            {
+                // Accept first connection
+                await server.AcceptConnectionAsync(async connection =>
+                {
+                    // Initial response
+                    await connection.ReadRequestHeaderAndSendResponseAsync(content: s_simpleContent);
+
+                    // Second response: Read request headers, then close connection
+                    await connection.ReadRequestHeaderAsync();
+                });
+
+                // Client should reconnect.  Accept that connection and send response.
+                await server.AcceptConnectionSendResponseAndCloseAsync(content: s_simpleContent);
+            });
+        }
+
+        [Fact]
         public async Task PostAsyncExpect100Continue_FailsAfterContentSendStarted_Throws()
         {
             if (IsWinHttpHandler)
