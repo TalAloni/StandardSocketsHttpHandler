@@ -12,6 +12,7 @@
     <PackageProjectUrl>https://github.com/TalAloni/StandardSocketsHttpHandler</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TalAloni/StandardSocketsHttpHandler</RepositoryUrl>
     <DebugType>embedded</DebugType>
+    <EmbedAllSources>true</EmbedAllSources>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
