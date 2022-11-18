@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -960,19 +960,31 @@ namespace System.Net.Http
 
             private void CopyTrailersToResponseMessage(HttpResponseMessage responseMessage)
             {
-#if !NETSTANDARD2_0
                 if (_trailers != null && _trailers.Count > 0)
                 {
+#if !NETSTANDARD2_0
                     foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
                     {
                         responseMessage.TrailingHeaders.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
                     }
-                    _trailers.Clear();
-                }
+#else
+                    var headers = new HttpTrailers();
+                    foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
+                    {
+                        headers.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
+                    }
+                    responseMessage.RequestMessage.Properties["__ResponseTrailers"] = headers;
 #endif
+                    _trailers.Clear();
+
+                }
+
+            }
+            class HttpTrailers : HttpHeaders
+            {
             }
 
-            private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
+                private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
             {
                 ReadOnlyMemory<byte> remaining = buffer;
 
