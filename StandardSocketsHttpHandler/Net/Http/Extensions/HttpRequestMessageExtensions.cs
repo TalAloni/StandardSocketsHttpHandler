@@ -18,6 +18,12 @@ namespace System.Net.Http
                 headersFieldName = "_headers";
                 headersField = typeof(HttpRequestMessage).GetField(headersFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             }
+            else if (headersField == null && RuntimeUtils.IsDotNetNative())
+            {
+                // In .NET Native reflection is not supported, GetField will always return null
+                // If HttpRequestMesssage.Headers will be accessed when equal to null, HttpRequestHeaders will be instantiated.
+                return true;
+            }
             HttpRequestHeaders headers = (HttpRequestHeaders)headersField.GetValue(request);
             return headers != null;
         }
