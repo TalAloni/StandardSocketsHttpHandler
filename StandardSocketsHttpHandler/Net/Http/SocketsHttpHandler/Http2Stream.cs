@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -968,7 +968,7 @@ namespace System.Net.Http
                         responseMessage.TrailingHeaders.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
                     }
 #else
-                    var headers = new HttpTrailers();
+                    var headers = new HttpResponseTrailers();
                     foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
                     {
                         headers.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
@@ -980,11 +980,8 @@ namespace System.Net.Http
                 }
 
             }
-            class HttpTrailers : HttpHeaders
-            {
-            }
-
-                private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
+            
+            private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
             {
                 ReadOnlyMemory<byte> remaining = buffer;
 
