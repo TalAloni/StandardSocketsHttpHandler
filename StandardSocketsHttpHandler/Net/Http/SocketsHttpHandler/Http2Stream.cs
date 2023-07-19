@@ -976,9 +976,7 @@ namespace System.Net.Http
                     responseMessage.RequestMessage.Properties["__ResponseTrailers"] = headers;
 #endif
                     _trailers.Clear();
-
                 }
-
             }
             
             private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
