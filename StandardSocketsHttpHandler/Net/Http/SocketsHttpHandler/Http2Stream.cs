@@ -978,7 +978,7 @@ namespace System.Net.Http
                     _trailers.Clear();
                 }
             }
-            
+
             private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
             {
                 ReadOnlyMemory<byte> remaining = buffer;
