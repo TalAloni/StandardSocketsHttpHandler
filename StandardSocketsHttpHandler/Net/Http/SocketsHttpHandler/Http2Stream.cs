@@ -960,16 +960,23 @@ namespace System.Net.Http
 
             private void CopyTrailersToResponseMessage(HttpResponseMessage responseMessage)
             {
-#if !NETSTANDARD2_0
                 if (_trailers != null && _trailers.Count > 0)
                 {
+#if !NETSTANDARD2_0
                     foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
                     {
                         responseMessage.TrailingHeaders.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
                     }
+#else
+                    var headers = new HttpResponseTrailers();
+                    foreach (KeyValuePair<HeaderDescriptor, string> trailer in _trailers)
+                    {
+                        headers.TryAddWithoutValidation(trailer.Key.Name, trailer.Value);
+                    }
+                    responseMessage.RequestMessage.Properties["__ResponseTrailers"] = headers;
+#endif
                     _trailers.Clear();
                 }
-#endif
             }
 
             private async Task SendDataAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
