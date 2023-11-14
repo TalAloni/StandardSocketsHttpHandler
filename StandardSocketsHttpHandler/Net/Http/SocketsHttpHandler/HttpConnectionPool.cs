@@ -26,6 +26,8 @@ namespace System.Net.Http
         private readonly string _host;
         private readonly int _port;
         private readonly Uri _proxyUri;
+        private static int _globalId;
+        private readonly int _id = Interlocked.Increment(ref _globalId);
 
         /// <summary>List of idle connections stored in the pool.</summary>
         private readonly List<CachedConnection> _idleConnections = new List<CachedConnection>();
@@ -37,10 +39,8 @@ namespace System.Net.Http
         /// <summary>Options specialized and cached for this pool and its <see cref="_key"/>.</summary>
         private readonly SslClientAuthenticationOptions _sslOptions;
 
-        /// <summary>The head of a list of waiters waiting for a connection.  Null if no one's waiting.</summary>
-        private ConnectionWaiter _waitersHead;
-        /// <summary>The tail of a list of waiters waiting for a connection.  Null if no one's waiting.</summary>
-        private ConnectionWaiter _waitersTail;
+        /// <summary>Queue of waiters waiting for a connection.  Created on demand.</summary>
+        private Queue<TaskCompletionSourceWithCancellation<HttpConnection>> _waiters;
 
         /// <summary>The number of connections associated with the pool.  Some of these may be in <see cref="_idleConnections"/>, others may be in use.</summary>
         private int _associatedConnectionCount;
@@ -175,11 +175,40 @@ namespace System.Net.Http
         /// <summary>Object used to synchronize access to state in the pool.</summary>
         private object SyncObj => _idleConnections;
 
-        private Task<(HttpConnection, HttpResponseMessage)> GetConnectionAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        private async Task<(HttpConnection connection, bool isNewConnection, HttpResponseMessage failureResponse)>
+            GetConnectionAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            HttpConnection connection = await GetOrReserveConnectionAsync(cancellationToken).ConfigureAwait(false);
+            if (connection != null)
+            {
+                return (connection, false, null);
+            }
+
+            if (NetEventSource.IsEnabled) Trace("Creating new connection for pool.");
+
+            try
+            {
+                HttpResponseMessage failureResponse;
+                (connection, failureResponse) = await CreateConnectionAsync(request, cancellationToken).ConfigureAwait(false);
+                if (connection == null)
+                {
+                    Debug.Assert(failureResponse != null);
+                    DecrementConnectionCount();
+                }
+                return (connection, true, failureResponse);
+            }
+            catch
+            {
+                DecrementConnectionCount();
+                throw;
+            }
+        }
+
+        private Task<HttpConnection> GetOrReserveConnectionAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                return Task.FromCanceled<(HttpConnection, HttpResponseMessage)>(cancellationToken);
+                return Task.FromCanceled<HttpConnection>(cancellationToken);
             }
 
             TimeSpan pooledConnectionLifetime = _poolManager.Settings._pooledConnectionLifetime;
@@ -187,8 +216,10 @@ namespace System.Net.Http
             DateTimeOffset now = DateTimeOffset.UtcNow;
             List<CachedConnection> list = _idleConnections;
 
-            // Try to get a cached connection.  If we can and if it's usable, return it.  If we can but it's not usable,
-            // try again.  And if we can't because there aren't any valid ones, create a new one and return it.
+            // Try to find a usable cached connection.
+            // If we can't find one, we will either wait for one to become available (if at the connection limit)
+            // or just increment the connection count and return null so the caller can create a new connection.
+            TaskCompletionSourceWithCancellation<HttpConnection> waiter;
             while (true)
             {
                 CachedConnection cachedConnection;
@@ -196,55 +227,28 @@ namespace System.Net.Http
                 {
                     if (list.Count > 0)
                     {
-                        // Pop off the next connection to try.  We'll test it outside of the lock
-                        // to avoid doing expensive validation while holding the lock.
+                        // We have a cached connection that we can attempt to use.
+                        // Test it below outside the lock, to avoid doing expensive validation while holding the lock.
                         cachedConnection = list[list.Count - 1];
                         list.RemoveAt(list.Count - 1);
                     }
                     else
                     {
-                        // No valid cached connections, so we need to create a new one.  If
-                        // there's no limit on the number of connections associated with this
-                        // pool, or if we haven't reached such a limit, simply create a new
-                        // connection.
+                        // No valid cached connections.
                         if (_associatedConnectionCount < _maxConnections)
                         {
                             if (NetEventSource.IsEnabled) Trace("Creating new connection for pool.");
                             IncrementConnectionCountNoLock();
-                            return WaitForCreatedConnectionAsync(CreateConnectionAsync(request, cancellationToken));
+                            return Task.FromResult((HttpConnection)null);
                         }
                         else
                         {
-                            // There is a limit, and we've reached it, which means we need to
-                            // wait for a connection to be returned to the pool or for a connection
-                            // associated with the pool to be dropped before we can create a
-                            // new one.  Create a waiter object and register it with the pool; it'll
-                            // be signaled with the created connection when one is returned or
-                            // space is available and the provided creation func has successfully
-                            // created the connection to be used.
-                            if (NetEventSource.IsEnabled) Trace("Limit reached.  Waiting to create new connection.");
-                            var waiter = new ConnectionWaiter(this, request, cancellationToken);
-                            EnqueueWaiter(waiter);
-                            if (cancellationToken.CanBeCanceled)
-                            {
-                                // If cancellation could be requested, register a callback for it that'll cancel
-                                // the waiter and remove the waiter from the queue.  Note that this registration needs
-                                // to happen under the reentrant lock and after enqueueing the waiter.
-                                waiter._cancellationTokenRegistration = cancellationToken.Register(s =>
-                                {
-                                    var innerWaiter = (ConnectionWaiter)s;
-                                    lock (innerWaiter._pool.SyncObj)
-                                    {
-                                        // If it's in the list, remove it and cancel it.
-                                        if (innerWaiter._pool.RemoveWaiterForCancellation(innerWaiter))
-                                        {
-                                            bool canceled = innerWaiter.TrySetCanceled(innerWaiter._cancellationToken);
-                                            Debug.Assert(canceled);
-                                        }
-                                    }
-                                }, waiter);
-                            }
-                            return waiter.Task;
+                            // We've reached the connection limit and need to wait for an existing connection
+                            // to become available, or to be closed so that we can create a new connection.
+                            // Enqueue a waiter that will be signalled when this happens.
+                            // Break out of the loop and then do the actual wait below.
+                            waiter = EnqueueWaiter();
+                            break;
                         }
 
                         // Note that we don't check for _disposed.  We may end up disposing the
@@ -264,7 +268,7 @@ namespace System.Net.Http
                 {
                     // We found a valid connection.  Return it.
                     if (NetEventSource.IsEnabled) conn.Trace("Found usable connection in pool.");
-                    return Task.FromResult<(HttpConnection, HttpResponseMessage)>((conn, null));
+                    return Task.FromResult(conn);
                 }
 
                 // We got a connection, but it was already closed by the server or the
@@ -273,6 +277,10 @@ namespace System.Net.Http
                 if (NetEventSource.IsEnabled) conn.Trace("Found invalid connection in pool.");
                 conn.Dispose();
             }
+
+            // We are at the connection limit. Wait for an available connection or connection count (indicated by null).
+            if (NetEventSource.IsEnabled) Trace("Connection limit reached, waiting for available connection.");
+            return waiter.WaitWithCancellationAsync(cancellationToken);
         }
 
         public async Task<HttpResponseMessage> SendWithRetryAsync(HttpRequestMessage request, bool doRequestAuth, CancellationToken cancellationToken)
@@ -281,39 +289,49 @@ namespace System.Net.Http
             { 
                 // Loop on connection failures and retry if possible.
 
-                (HttpConnection connection, HttpResponseMessage response) = await GetConnectionAsync(request, cancellationToken).ConfigureAwait(false);
-                if (response != null)
+                (HttpConnection connection, bool isNewConnection, HttpResponseMessage failureResponse) = await GetConnectionAsync(request, cancellationToken).ConfigureAwait(false);
+                if (failureResponse != null)
                 {
                     // Proxy tunnel failure; return proxy response
-                    return response;
+                    Debug.Assert(isNewConnection);
+                    Debug.Assert(connection == null);
+                    return failureResponse;
                 }
 
-                bool isNewConnection = connection.IsNewConnection;
-
-                connection.Acquire();
                 try
                 {
-                    return await SendWithNtConnectionAuthAsync((HttpConnection)connection, request, doRequestAuth, cancellationToken).ConfigureAwait(false);                    
+                    if (connection is HttpConnection)
+                    {
+                        return await SendWithNtConnectionAuthAsync((HttpConnection)connection, request, doRequestAuth, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        return await connection.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                    }
                 }
                 catch (HttpRequestException e) when (!isNewConnection && e.InnerException is IOException && connection.CanRetry)
                 {
                     // Eat exception and try again.
-                }
-                finally
-                {
-                    connection.Release();
                 }
             }
         }
 
         private async Task<HttpResponseMessage> SendWithNtConnectionAuthAsync(HttpConnection connection, HttpRequestMessage request, bool doRequestAuth, CancellationToken cancellationToken)
         {
-            if (doRequestAuth && Settings._credentials != null)
+            connection.Acquire();
+            try
             {
-                return await AuthenticationHelper.SendWithNtConnectionAuthAsync(request, Settings._credentials, connection, this, cancellationToken).ConfigureAwait(false);
-            }
+                if (doRequestAuth && Settings._credentials != null)
+                {
+                    return await AuthenticationHelper.SendWithNtConnectionAuthAsync(request, Settings._credentials, connection, this, cancellationToken).ConfigureAwait(false);
+                }
 
-            return await SendWithNtProxyAuthAsync(connection, request, cancellationToken).ConfigureAwait(false);
+                return await SendWithNtProxyAuthAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                connection.Release();
+            }
         }
 
         public Task<HttpResponseMessage> SendWithNtProxyAuthAsync(HttpConnection connection, HttpRequestMessage request, CancellationToken cancellationToken)
@@ -425,103 +443,38 @@ namespace System.Net.Http
         }
 
         /// <summary>Enqueues a waiter to the waiters list.</summary>
-        /// <param name="waiter">The waiter to add.</param>
-        private void EnqueueWaiter(ConnectionWaiter waiter)
+        private TaskCompletionSourceWithCancellation<HttpConnection> EnqueueWaiter()
         {
             Debug.Assert(Monitor.IsEntered(SyncObj));
-            Debug.Assert(waiter != null);
-            Debug.Assert(waiter._next == null);
-            Debug.Assert(waiter._prev == null);
+            Debug.Assert(Settings._maxConnectionsPerServer != int.MaxValue);
+            Debug.Assert(_idleConnections.Count == 0, $"With {_idleConnections.Count} idle connections, we shouldn't have a waiter.");
 
-            waiter._next = _waitersHead;
-            if (_waitersHead != null)
+            if (_waiters == null)
             {
-                _waitersHead._prev = waiter;
+                _waiters = new Queue<TaskCompletionSourceWithCancellation<HttpConnection>>();
             }
-            else
-            {
-                Debug.Assert(_waitersTail == null);
-                _waitersTail = waiter;
-            }
-            _waitersHead = waiter;
+
+            var waiter = new TaskCompletionSourceWithCancellation<HttpConnection>();
+            _waiters.Enqueue(waiter);
+            return waiter;
+        }
+
+        private bool HasWaiter()
+        {
+            Debug.Assert(Monitor.IsEntered(SyncObj));
+
+            return (_waiters != null && _waiters.Count > 0);
         }
 
         /// <summary>Dequeues a waiter from the waiters list.  The list must not be empty.</summary>
         /// <returns>The dequeued waiter.</returns>
-        private ConnectionWaiter DequeueWaiter()
+        private TaskCompletionSourceWithCancellation<HttpConnection> DequeueWaiter()
         {
             Debug.Assert(Monitor.IsEntered(SyncObj));
-            Debug.Assert(_waitersTail != null);
+            Debug.Assert(Settings._maxConnectionsPerServer != int.MaxValue);
+            Debug.Assert(_idleConnections.Count == 0, $"With {_idleConnections.Count} idle connections, we shouldn't have a waiter.");
 
-            ConnectionWaiter waiter = _waitersTail;
-            _waitersTail = waiter._prev;
-
-            if (_waitersTail != null)
-            {
-                _waitersTail._next = null;
-            }
-            else
-            {
-                Debug.Assert(_waitersHead == waiter);
-                _waitersHead = null;
-            }
-
-            waiter._next = null;
-            waiter._prev = null;
-
-            return waiter;
-        }
-
-        /// <summary>Removes the specified waiter from the waiters list as part of a cancellation request.</summary>
-        /// <param name="waiter">The waiter to remove.</param>
-        /// <returns>true if the waiter was in the list; otherwise, false.</returns>
-        private bool RemoveWaiterForCancellation(ConnectionWaiter waiter)
-        {
-            Debug.Assert(Monitor.IsEntered(SyncObj));
-            Debug.Assert(waiter != null);
-            Debug.Assert(waiter._cancellationToken.IsCancellationRequested);
-
-            bool inList = waiter._next != null || waiter._prev != null || _waitersHead == waiter || _waitersTail == waiter;
-
-            if (waiter._next != null) waiter._next._prev = waiter._prev;
-            if (waiter._prev != null) waiter._prev._next = waiter._next;
-
-            if (_waitersHead == waiter && _waitersTail == waiter)
-            {
-                _waitersHead = _waitersTail = null;
-            }
-            else if (_waitersHead == waiter)
-            {
-                _waitersHead = waiter._next;
-            }
-            else if (_waitersTail == waiter)
-            {
-                _waitersTail = waiter._prev;
-            }
-
-            waiter._next = null;
-            waiter._prev = null;
-
-            return inList;
-        }
-
-        /// <summary>Waits for and returns the created connection, decrementing the associated connection count if it fails.</summary>
-        private async Task<(HttpConnection, HttpResponseMessage)> WaitForCreatedConnectionAsync(Task<(HttpConnection, HttpResponseMessage)> creationTask)
-        {
-            try
-            {
-                (HttpConnection connection, HttpResponseMessage response) = await creationTask.ConfigureAwait(false);
-                if (connection == null)
-                {
-                    DecrementConnectionCount();
-                }
-                return (connection, response);
-            }
-            catch
-            {
-                DecrementConnectionCount();
-                throw;
-            }
+            return _waiters.Dequeue();
         }
 
         /// <summary>
@@ -546,6 +499,27 @@ namespace System.Net.Http
             _associatedConnectionCount++;
         }
 
+        private bool TransferConnection(HttpConnection connection)
+        {
+            Debug.Assert(Monitor.IsEntered(SyncObj));
+
+            while (HasWaiter())
+            {
+                TaskCompletionSource<HttpConnection> waiter = DequeueWaiter();
+
+                // Try to complete the task. If it's been cancelled already, this will fail.
+                if (waiter.TrySetResult(connection))
+                {
+                    return true;
+                }
+
+                // Couldn't transfer to that waiter because it was cancelled. Try again.
+                Debug.Assert(waiter.Task.IsCanceled);
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Decrements the number of connections associated with the pool.
         /// If there are waiters on the pool due to having reached the maximum,
@@ -562,67 +536,15 @@ namespace System.Net.Http
                 // Mark the pool as not being stale.
                 _usedSinceLastCleanup = true;
 
-                if (_waitersHead == null)
+                if (TransferConnection(null))
                 {
-                    // There are no waiters to which the count should logically be transferred,
-                    // so simply decrement the count.
-                    _associatedConnectionCount--;
+                    if (NetEventSource.IsEnabled) Trace("Transferred connection count to waiter.");
+                    return;
                 }
-                else
-                {
-                    // There's at least one waiter to which we should try to logically transfer
-                    // the associated count.  Get the waiter.
-                    Debug.Assert(_idleConnections.Count == 0, $"With {_idleConnections} connections, we shouldn't have a waiter.");
-                    ConnectionWaiter waiter = DequeueWaiter();
-                    Debug.Assert(waiter != null, "Expected non-null waiter");
-                    Debug.Assert(waiter.Task.Status == TaskStatus.WaitingForActivation, $"Expected {waiter.Task.Status} == {nameof(TaskStatus.WaitingForActivation)}");
-                    waiter._cancellationTokenRegistration.Dispose();
 
-                    // Having a waiter means there must not be any idle connections, so we need to create
-                    // one, and we do so using the logic associated with the waiter.
-                    Task<(HttpConnection, HttpResponseMessage)> connectionTask = waiter.CreateConnectionAsync();
-                    if (connectionTask.IsCompletedSuccessfully())
-                    {
-                        // We synchronously and successfully created a connection (this is rare).
-                        // Transfer the connection to the waiter.  Since we already have a count
-                        // that's inflated due to the connection being disassociated, we don't
-                        // need to change the count here.
-                        waiter.SetResult(connectionTask.Result);
-                    }
-                    else
-                    {
-                        // We initiated a connection creation.  When it completes, transfer the result to the waiter.
-                        connectionTask.ContinueWith((innerConnectionTask, state) =>
-                        {
-                            var innerWaiter = (ConnectionWaiter)state;
-                            try
-                            {
-                                // Get the resulting connection.
-                                (HttpConnection result, HttpResponseMessage response) = innerConnectionTask.GetAwaiter().GetResult();
-
-                                if (response != null)
-                                {
-                                    // Proxy tunnel connect failed, so decrement the connection count.
-                                    innerWaiter._pool.DecrementConnectionCount();
-                                }
-
-                                // Store the resulting connection into the waiter. As in the synchronous case,
-                                // since we already have a count that's inflated due to the connection being
-                                // disassociated, we don't need to change the count here.
-                                innerWaiter.SetResult(innerConnectionTask.Result);
-                            }
-                            catch (Exception e)
-                            {
-                                // The creation operation failed.  Store the exception into the waiter.
-                                innerWaiter.SetException(e);
-
-                                // At this point, a connection was dropped and we failed to replace it,
-                                // which means our connection count still needs to be decremented.
-                                innerWaiter._pool.DecrementConnectionCount();
-                            }
-                        }, waiter, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-                    }
-                }
+                // There are no waiters to which the count should logically be transferred,
+                // so simply decrement the count.
+                _associatedConnectionCount--;
             }
         }
         
@@ -630,43 +552,65 @@ namespace System.Net.Http
         /// <param name="connection">The connection to return.</param>
         public void ReturnConnection(HttpConnection connection)
         {
-            List<CachedConnection> list = _idleConnections;
-            lock (SyncObj)
+            TimeSpan lifetime = _poolManager.Settings._pooledConnectionLifetime;
+            bool lifetimeExpired = 
+                lifetime != Timeout.InfiniteTimeSpan &&
+                (lifetime == TimeSpan.Zero || connection.CreationTime + lifetime <= DateTime.UtcNow);
+
+            if (!lifetimeExpired)
             {
-                Debug.Assert(list.Count <= _maxConnections, $"Expected {list.Count} <= {_maxConnections}");
-
-                // Mark the pool as still being active.
-                _usedSinceLastCleanup = true;
-
-                // If there's someone waiting for a connection, simply
-                // transfer this one to them rather than pooling it.
-                if (_waitersTail != null && !connection.EnsureReadAheadAndPollRead())
+                List<CachedConnection> list = _idleConnections;
+                lock (SyncObj)
                 {
-                    ConnectionWaiter waiter = DequeueWaiter();
-                    waiter._cancellationTokenRegistration.Dispose();
+                    Debug.Assert(list.Count <= _maxConnections, $"Expected {list.Count} <= {_maxConnections}");
 
-                    if (NetEventSource.IsEnabled) connection.Trace("Transferring connection returned to pool.");
-                    waiter.SetResult((connection, null));
+                    // Mark the pool as still being active.
+                    _usedSinceLastCleanup = true;
 
-                    return;
+                    // If there's someone waiting for a connection and this one's still valid, simply transfer this one to them rather than pooling it.
+                    // Note that while we checked connection lifetime above, we don't check idle timeout, as even if idle timeout
+                    // is zero, we consider a connection that's just handed from one use to another to never actually be idle.
+                    bool receivedUnexpectedData = false;
+                    if (HasWaiter())
+                    {
+                        receivedUnexpectedData = connection.EnsureReadAheadAndPollRead();
+                        if (!receivedUnexpectedData && TransferConnection(connection))
+                        {
+                            if (NetEventSource.IsEnabled) connection.Trace("Transferred connection to waiter.");
+                            return;
+                        }
+                    }
+
+                    // If the connection is still valid, add it to the list.
+                    // If the pool has been disposed of, dispose the connection being returned,
+                    // as the pool is being deactivated. We do this after the above in order to
+                    // use pooled connections to satisfy any requests that pended before the
+                    // the pool was disposed of.  We also dispose of connections if connection
+                    // timeouts are such that the connection would immediately expire, anyway, as
+                    // well as for connections that have unexpectedly received extraneous data / EOF.
+                    if (!receivedUnexpectedData &&
+                        !_disposed &&
+                        _poolManager.Settings._pooledConnectionIdleTimeout != TimeSpan.Zero)
+                    {
+                        // Pool the connection by adding it to the list.
+                        list.Add(new CachedConnection(connection));
+                        if (NetEventSource.IsEnabled) connection.Trace("Stored connection in pool.");
+                        return;
+                    }
                 }
-
-                // If the pool has been disposed of, dispose the connection being returned,
-                // as the pool is being deactivated. We do this after the above in order to
-                // use pooled connections to satisfy any requests that pended before the
-                // the pool was disposed of.  We also dispose of connections if connection
-                // timeouts are such that the connection would immediately expire, anyway.
-                if (_disposed || _poolManager.AvoidStoringConnections)
-                {
-                    if (NetEventSource.IsEnabled) connection.Trace("Disposing connection returned to disposed pool.");
-                    connection.Dispose();
-                    return;
-                }
-
-                // Pool the connection by adding it to the list.
-                list.Add(new CachedConnection(connection));
-                if (NetEventSource.IsEnabled) connection.Trace("Stored connection in pool.");
             }
+
+            // The connection could be not be reused.  Dispose of it.
+            // Disposing it will alert any waiters that a connection slot has become available.
+            if (NetEventSource.IsEnabled)
+            {
+                connection.Trace(
+                    lifetimeExpired ? "Disposing connection return to pool. Connection lifetime expired." :
+                    _poolManager.Settings._pooledConnectionIdleTimeout == TimeSpan.Zero ? "Disposing connection returned to pool. Zero idle timeout." :
+                    _disposed ? "Disposing connection returned to pool. Pool was disposed." :
+                    "Disposing connection returned to pool. Read-ahead unexpectedly completed.");
+            }
+            connection.Dispose();
         }
 
         /// <summary>
@@ -882,40 +826,27 @@ namespace System.Net.Http
             public override int GetHashCode() => _connection?.GetHashCode() ?? 0;
         }
 
-        /// <summary>
-        /// Provides a waiter object that's used when we've reached the limit on connections
-        /// associated with the pool.  When a connection is available or created, it's stored
-        /// into the waiter as a result, and if no connection is available from the pool,
-        /// this waiter's logic is used to create the connection.
-        /// </summary>
-        private class ConnectionWaiter : TaskCompletionSource<(HttpConnection, HttpResponseMessage)>
+        private sealed class TaskCompletionSourceWithCancellation<T> : TaskCompletionSource<T>
         {
-            /// <summary>The pool with which this waiter is associated.</summary>
-            internal readonly HttpConnectionPool _pool;
-            /// <summary>Request to use to create the connection.</summary>
-            private readonly HttpRequestMessage _request;
+            private CancellationToken _cancellationToken;
 
-            /// <summary>Cancellation token for the waiter.</summary>
-            internal readonly CancellationToken _cancellationToken;
-            /// <summary>Registration that removes the waiter from the registration list.</summary>
-            internal CancellationTokenRegistration _cancellationTokenRegistration;
-            /// <summary>Next waiter in the list.</summary>
-            internal ConnectionWaiter _next;
-            /// <summary>Previous waiter in the list.</summary>
-            internal ConnectionWaiter _prev;
-
-            /// <summary>Initializes the waiter.</summary>
-            public ConnectionWaiter(HttpConnectionPool pool, HttpRequestMessage request, CancellationToken cancellationToken) : base(TaskCreationOptions.RunContinuationsAsynchronously)
+            public TaskCompletionSourceWithCancellation() : base(TaskCreationOptions.RunContinuationsAsynchronously)
             {
-                Debug.Assert(pool != null, "Expected non-null pool");
-                _pool = pool;
-                _request = request;
-                _cancellationToken = cancellationToken;
             }
 
-            /// <summary>Creates a connection.</summary>
-            public Task<(HttpConnection, HttpResponseMessage)> CreateConnectionAsync() =>
-                _pool.CreateConnectionAsync(_request, _cancellationToken);
+            private void OnCancellation()
+            {
+                TrySetCanceled(_cancellationToken);
+            }
+
+            public async Task<T> WaitWithCancellationAsync(CancellationToken cancellationToken)
+            {
+                _cancellationToken = cancellationToken;
+                using (cancellationToken.Register(s => ((TaskCompletionSourceWithCancellation<HttpConnection>)s).OnCancellation(), this))
+                {
+                    return await Task.ConfigureAwait(false);
+                }
+            }
         }
     }
 }

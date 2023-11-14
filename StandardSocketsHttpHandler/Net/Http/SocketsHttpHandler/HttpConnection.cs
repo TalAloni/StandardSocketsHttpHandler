@@ -198,16 +198,6 @@ namespace System.Net.Http
             return null;
         }
 
-        public bool IsNewConnection
-        {
-            get
-            {
-                // This is only valid when we are not actually processing a request.
-                Debug.Assert(_currentRequest == null);
-                return (_readAheadTask == null);
-            }
-        }
-
         public bool CanRetry
         {
             get
@@ -1494,7 +1484,7 @@ namespace System.Net.Http
             }
         }
 
-        public void Acquire()
+        internal void Acquire()
         {
             Debug.Assert(_currentRequest == null);
             Debug.Assert(!_inUse);
@@ -1502,7 +1492,7 @@ namespace System.Net.Http
             _inUse = true;
         }
 
-        public void Release()
+        internal void Release()
         {
             Debug.Assert(_inUse);
 
