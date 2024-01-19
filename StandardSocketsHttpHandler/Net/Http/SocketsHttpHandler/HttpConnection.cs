@@ -1444,7 +1444,8 @@ namespace System.Net.Http
             await CopyFromBufferAsync(destination, remaining, cancellationToken).ConfigureAwait(false);
             _readLength = _readOffset = 0;
 
-            await _stream.CopyToAsync(destination).ConfigureAwait(false);
+            const int BufferSize = 81920; // Stream.DefaultCopyBufferSize
+            await _stream.CopyToAsync(destination, BufferSize, cancellationToken).ConfigureAwait(false);
         }
 
         // Copy *exactly* [length] bytes into destination; throws on end of stream.
