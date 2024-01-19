@@ -59,10 +59,12 @@ namespace System.Net.Http
                 if (GZipEnabled && last == s_gzip)
                 {
                     response.Content = new GZipDecompressedContent(response.Content);
+                    ((GZipDecompressedContent)response.Content).SetDefaultCancellationToken(cancellationToken);
                 }
                 else if (DeflateEnabled && last == s_deflate)
                 {
                     response.Content = new DeflateDecompressedContent(response.Content);
+                    ((DeflateDecompressedContent)response.Content).SetDefaultCancellationToken(cancellationToken);
                 }
             }
 
@@ -82,6 +84,7 @@ namespace System.Net.Http
         private abstract class DecompressedContent : HttpContent
         {
             HttpContent _originalContent;
+            private CancellationToken _cancellationToken;
             bool _contentConsumed;
 
             public DecompressedContent(HttpContent originalContent)
@@ -106,13 +109,24 @@ namespace System.Net.Http
                 }
             }
 
+            public void SetDefaultCancellationToken(CancellationToken cancellationToken)
+            {
+                Debug.Assert(cancellationToken != null);
+
+                _cancellationToken = cancellationToken;
+            }
+
             protected abstract Stream GetDecompressedStream(Stream originalStream);
 
-            protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context) =>
+                SerializeToStreamAsyncInternal(stream, context, _cancellationToken);
+
+            internal async Task SerializeToStreamAsyncInternal(Stream stream, TransportContext context, CancellationToken cancellationToken)
             {
                 using (Stream decompressedStream = await CreateContentReadStreamAsync().ConfigureAwait(false))
                 {
-                    await decompressedStream.CopyToAsync(stream).ConfigureAwait(false);
+                    const int BufferSize = 81920; // Stream.DefaultCopyBufferSize
+                    await decompressedStream.CopyToAsync(stream, BufferSize, cancellationToken).ConfigureAwait(false);
                 }
             }
 
