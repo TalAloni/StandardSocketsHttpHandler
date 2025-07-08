@@ -10,7 +10,7 @@ namespace System.Net.Http
         {
             foreach (KeyValuePair<string, IEnumerable<string>> header in sourceHeaders)
             {
-                headers.Add(header.Key, header.Value);
+                headers.TryAddWithoutValidation(header.Key, header.Value);
             }
         }
     }
